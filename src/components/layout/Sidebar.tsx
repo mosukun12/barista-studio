@@ -54,8 +54,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         {/* Brand / Logo */}
         <div className="flex items-center justify-between h-16 px-6 border-b border-cafe-border/70 dark:border-cafe-darkBorder">
           <NavLink to="/" className="flex items-center gap-3 group" onClick={onClose}>
-            <div className="w-10 h-10 rounded-xl bg-cafe-espresso dark:bg-cafe-copper flex items-center justify-center text-white shadow-sm transition-transform group-hover:scale-105">
-              <Coffee className="w-5 h-5 text-cafe-brass" />
+            <div className="w-10 h-10 rounded-xl bg-cafe-espresso dark:bg-cafe-darkCard flex items-center justify-center shadow-sm transition-transform group-hover:scale-105 overflow-hidden p-1.5 border border-cafe-border/50 dark:border-cafe-darkBorder">
+              <img src="/favicon.ico" alt="Logo" className="w-full h-full object-contain" />
             </div>
             <div>
               <span className="font-bold text-base tracking-tight text-cafe-text dark:text-cafe-cream">
