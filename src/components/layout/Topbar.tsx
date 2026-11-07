@@ -13,7 +13,7 @@ interface TopbarProps {
 export const Topbar: React.FC<TopbarProps> = ({ onOpenMobileMenu, title }) => {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
 
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-4 sm:px-8 bg-cafe-surface/85 dark:bg-cafe-darkSurface/85 backdrop-blur-md border-b border-cafe-border dark:border-cafe-darkBorder">
@@ -52,19 +52,36 @@ export const Topbar: React.FC<TopbarProps> = ({ onOpenMobileMenu, title }) => {
           {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-cafe-muted" />}
         </button>
 
-        {/* User Pill */}
+        {/* User Pill / Login Link */}
         <div className="flex items-center gap-2 pl-2 border-l border-cafe-border/70 dark:border-cafe-darkBorder">
-          <div className="w-8 h-8 rounded-full bg-cafe-copper-light dark:bg-cafe-darkCard flex items-center justify-center text-cafe-copper border border-cafe-copper/20 font-semibold text-xs">
-            {user?.full_name ? user.full_name[0].toUpperCase() : <User className="w-4 h-4" />}
-          </div>
-          <div className="hidden md:block text-left">
-            <span className="block text-xs font-semibold text-cafe-text dark:text-cafe-cream leading-tight">
-              {user?.full_name || 'Barista'}
-            </span>
-            <span className="block text-[10px] text-cafe-muted leading-tight">
-              {user?.role === 'head_barista' ? 'Head Barista' : 'Barista'}
-            </span>
-          </div>
+          {user && user.email !== 'barista@studio.local' ? (
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-cafe-copper-light dark:bg-cafe-darkCard flex items-center justify-center text-cafe-copper border border-cafe-copper/20 font-semibold text-xs">
+                {user.full_name ? user.full_name[0].toUpperCase() : <User className="w-4 h-4" />}
+              </div>
+              <div className="hidden md:block text-left">
+                <span className="block text-xs font-semibold text-cafe-text dark:text-cafe-cream leading-tight">
+                  {user.full_name || user.email}
+                </span>
+                <button
+                  onClick={() => signOut()}
+                  className="text-[10px] text-rose-600 hover:underline leading-tight block"
+                >
+                  ออกจากระบบ
+                </button>
+              </div>
+            </div>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              icon={<User className="w-3.5 h-3.5" />}
+              onClick={() => navigate('/login')}
+              className="text-xs"
+            >
+              เข้าสู่ระบบ
+            </Button>
+          )}
         </div>
       </div>
     </header>

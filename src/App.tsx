@@ -13,6 +13,7 @@ import { TrainingPage } from './pages/TrainingPage';
 import { PracticePage } from './pages/PracticePage';
 import { SimulatorPage } from './pages/SimulatorPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { AuthPage } from './pages/AuthPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -41,6 +42,7 @@ export const App: React.FC = () => {
                 <Route path="practice" element={<PracticePage />} />
                 <Route path="simulator" element={<SimulatorPage />} />
                 <Route path="settings" element={<SettingsPage />} />
+                <Route path="login" element={<AuthPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Route>
             </Routes>

@@ -26,13 +26,23 @@ export const authService = {
           return {
             id: p.id,
             email: userData.user.email,
-            full_name: p.full_name,
+            full_name: p.full_name || userData.user.user_metadata?.full_name,
             avatar_url: p.avatar_url,
-            role: p.role,
-            theme_preference: p.theme_preference,
-            default_unit_system: p.default_unit_system,
+            role: p.role || 'barista',
+            theme_preference: p.theme_preference || 'light',
+            default_unit_system: p.default_unit_system || 'metric',
           };
         }
+
+        return {
+          id: userData.user.id,
+          email: userData.user.email,
+          full_name: userData.user.user_metadata?.full_name || 'Barista User',
+          avatar_url: null,
+          role: 'barista',
+          theme_preference: 'light',
+          default_unit_system: 'metric',
+        };
       }
     }
 
@@ -48,9 +58,43 @@ export const authService = {
     };
   },
 
+  async signIn(email: string, password: string) {
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (error) throw new Error(error.message);
+      return data;
+    }
+    // Local mode simulate login
+    localStorage.setItem('barista_studio_local_user', email);
+    return { user: { email } };
+  },
+
+  async signUp(email: string, password: string, fullName: string) {
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+          },
+        },
+      });
+      if (error) throw new Error(error.message);
+      return data;
+    }
+    // Local mode simulate signup
+    localStorage.setItem('barista_studio_local_user', email);
+    return { user: { email, user_metadata: { full_name: fullName } } };
+  },
+
   async signOut() {
     if (isSupabaseConfigured && supabase) {
       await supabase.auth.signOut();
     }
+    localStorage.removeItem('barista_studio_local_user');
   },
 };

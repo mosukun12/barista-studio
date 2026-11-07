@@ -199,6 +199,76 @@ export const ingredientService = {
     return localStore.getCategories().filter((c) => c.category_type === type);
   },
 
+  async createCategory(cat: Partial<Category>): Promise<Category> {
+    const newCat: Category = {
+      id: crypto.randomUUID(),
+      user_id: 'default_user',
+      category_type: cat.category_type || 'recipe',
+      name: cat.name?.trim() || 'New Category',
+      slug: (cat.name?.toLowerCase().replace(/\s+/g, '-') || 'new-category') + `-${Date.now()}`,
+      description: cat.description?.trim() || null,
+      icon: cat.icon || null,
+      sort_order: cat.sort_order || 99,
+      created_at: new Date().toISOString(),
+    };
+
+    if (isSupabaseConfigured && supabase) {
+      const { data: user } = await supabase.auth.getUser();
+      if (user?.user) newCat.user_id = user.user.id;
+
+      const { data, error } = await (supabase as any)
+        .from('categories')
+        .insert(newCat)
+        .select()
+        .single();
+      if (error) throw new Error(error.message);
+      return data as Category;
+    }
+
+    const all = localStore.getCategories();
+    all.push(newCat);
+    localStore.saveCategories(all);
+    return newCat;
+  },
+
+  async updateCategory(id: string, updates: Partial<Category>): Promise<Category> {
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await (supabase as any)
+        .from('categories')
+        .update({
+          name: updates.name,
+          description: updates.description,
+          icon: updates.icon,
+          sort_order: updates.sort_order,
+        })
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw new Error(error.message);
+      return data as Category;
+    }
+
+    const all = localStore.getCategories();
+    const idx = all.findIndex((c) => c.id === id);
+    if (idx !== -1) {
+      all[idx] = { ...all[idx], ...updates };
+      localStore.saveCategories(all);
+      return all[idx];
+    }
+    throw new Error('ไม่พบหมวดหมู่ที่ต้องการแก้ไข');
+  },
+
+  async deleteCategory(id: string): Promise<void> {
+    if (isSupabaseConfigured && supabase) {
+      const { error } = await (supabase as any).from('categories').delete().eq('id', id);
+      if (error) throw new Error(error.message);
+      return;
+    }
+
+    const all = localStore.getCategories().filter((c) => c.id !== id);
+    localStore.saveCategories(all);
+  },
+
   async getUnits(): Promise<MeasurementUnit[]> {
     if (isSupabaseConfigured && supabase) {
       const { data, error } = await supabase
@@ -213,5 +283,48 @@ export const ingredientService = {
       return data as MeasurementUnit[];
     }
     return localStore.getUnits();
+  },
+
+  async createUnit(unit: Partial<MeasurementUnit>): Promise<MeasurementUnit> {
+    const newUnit: MeasurementUnit = {
+      id: crypto.randomUUID(),
+      name: unit.name?.trim() || 'Custom Unit',
+      symbol: unit.symbol?.trim() || 'unit',
+      unit_type: unit.unit_type || 'custom',
+      is_convertible: Boolean(unit.is_convertible),
+      conversion_factor_to_base: unit.conversion_factor_to_base || null,
+      sort_order: unit.sort_order || 99,
+    };
+
+    if (isSupabaseConfigured && supabase) {
+      const { data: user } = await supabase.auth.getUser();
+      const insertPayload = {
+        ...newUnit,
+        user_id: user?.user ? user.user.id : null,
+      };
+      const { data, error } = await (supabase as any)
+        .from('measurement_units')
+        .insert(insertPayload)
+        .select()
+        .single();
+      if (error) throw new Error(error.message);
+      return data as MeasurementUnit;
+    }
+
+    const all = localStore.getUnits();
+    all.push(newUnit);
+    localStore.saveUnits(all);
+    return newUnit;
+  },
+
+  async deleteUnit(id: string): Promise<void> {
+    if (isSupabaseConfigured && supabase) {
+      const { error } = await (supabase as any).from('measurement_units').delete().eq('id', id);
+      if (error) throw new Error(error.message);
+      return;
+    }
+
+    const all = localStore.getUnits().filter((u) => u.id !== id);
+    localStore.saveUnits(all);
   },
 };

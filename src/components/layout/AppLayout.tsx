@@ -12,6 +12,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/practice': 'ระบบฝึกจำสูตร (Practice Mode)',
   '/simulator': 'บาริสต้าจำลองสถานการณ์ (Barista Simulator)',
   '/settings': 'ตั้งค่าระบบและสำรองข้อมูล (Settings)',
+  '/login': 'เข้าสู่ระบบ / บัญชีผู้ใช้ (Account)',
 };
 
 export const AppLayout: React.FC = () => {
