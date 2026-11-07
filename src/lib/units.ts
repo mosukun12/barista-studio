@@ -1,14 +1,14 @@
 import { MeasurementUnit } from '../types';
 
 export const STANDARD_UNITS: MeasurementUnit[] = [
-  { id: 'u-ml', name: 'มิลลิลิตร (ml)', symbol: 'ml', unit_type: 'volume', is_convertible: true, conversion_factor_to_base: 1, sort_order: 1 },
-  { id: 'u-oz', name: 'ออนซ์ (oz)', symbol: 'oz', unit_type: 'volume', is_convertible: true, conversion_factor_to_base: 29.5735, sort_order: 2 },
+  { id: 'u-oz', name: 'ออนซ์ (oz)', symbol: 'oz', unit_type: 'volume', is_convertible: true, conversion_factor_to_base: 29.5735, sort_order: 1 },
+  { id: 'u-ml', name: 'มิลลิลิตร (ml)', symbol: 'ml', unit_type: 'volume', is_convertible: true, conversion_factor_to_base: 1, sort_order: 2 },
   { id: 'u-g', name: 'กรัม (g)', symbol: 'g', unit_type: 'weight', is_convertible: true, conversion_factor_to_base: 1, sort_order: 3 },
-  { id: 'u-kg', name: 'กิโลกรัม (kg)', symbol: 'kg', unit_type: 'weight', is_convertible: true, conversion_factor_to_base: 1000, sort_order: 4 },
-  { id: 'u-l', name: 'ลิตร (L)', symbol: 'L', unit_type: 'volume', is_convertible: true, conversion_factor_to_base: 1000, sort_order: 5 },
-  { id: 'u-shot', name: 'ช็อต (Shot)', symbol: 'shot', unit_type: 'custom', is_convertible: false, sort_order: 6 },
-  { id: 'u-pump', name: 'ปั๊ม (Pump)', symbol: 'pump', unit_type: 'custom', is_convertible: false, sort_order: 7 },
-  { id: 'u-scoop', name: 'ช้อนตัก (Scoop)', symbol: 'scoop', unit_type: 'custom', is_convertible: false, sort_order: 8 },
+  { id: 'u-pump', name: 'ปั๊ม (Pump)', symbol: 'pump', unit_type: 'custom', is_convertible: false, sort_order: 4 },
+  { id: 'u-shot', name: 'ช็อต (Shot)', symbol: 'shot', unit_type: 'custom', is_convertible: false, sort_order: 5 },
+  { id: 'u-scoop', name: 'ช้อนตัก (Scoop)', symbol: 'scoop', unit_type: 'custom', is_convertible: false, sort_order: 6 },
+  { id: 'u-kg', name: 'กิโลกรัม (kg)', symbol: 'kg', unit_type: 'weight', is_convertible: true, conversion_factor_to_base: 1000, sort_order: 7 },
+  { id: 'u-l', name: 'ลิตร (L)', symbol: 'L', unit_type: 'volume', is_convertible: true, conversion_factor_to_base: 1000, sort_order: 8 },
   { id: 'u-tsp', name: 'ช้อนชา (tsp)', symbol: 'tsp', unit_type: 'volume', is_convertible: true, conversion_factor_to_base: 4.9289, sort_order: 9 },
   { id: 'u-tbsp', name: 'ช้อนโต๊ะ (tbsp)', symbol: 'tbsp', unit_type: 'volume', is_convertible: true, conversion_factor_to_base: 14.7868, sort_order: 10 },
   { id: 'u-pc', name: 'ชิ้น / ลูก (Piece)', symbol: 'pc', unit_type: 'count', is_convertible: false, sort_order: 11 },

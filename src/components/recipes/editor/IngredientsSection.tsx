@@ -1,5 +1,5 @@
-import React from 'react';
-import { Plus, Trash2, ArrowUp, ArrowDown, Sparkles, Scale } from 'lucide-react';
+import React, { useState } from 'react';
+import { Plus, Trash2, ArrowUp, ArrowDown, Scale, Check, X, Sparkles } from 'lucide-react';
 import { RecipeIngredientItem, Ingredient, MeasurementUnit } from '../../../types';
 import { Button } from '../../common/Button';
 import { STANDARD_UNITS } from '../../../lib/units';
@@ -21,18 +21,24 @@ export const IngredientsSection: React.FC<IngredientsSectionProps> = ({
   onRefreshInventory,
 }) => {
   const activeUnits = units.length > 0 ? units : STANDARD_UNITS;
+  const ozUnit = activeUnits.find((u) => u.symbol.toLowerCase() === 'oz') || activeUnits[0];
+
+  // Quick inline add ingredient state
+  const [creatingRowIndex, setCreatingRowIndex] = useState<number | null>(null);
+  const [newIngredientName, setNewIngredientName] = useState('');
+  const [isSubmittingQuickAdd, setIsSubmittingQuickAdd] = useState(false);
 
   const handleAddRow = () => {
     const defaultIngredient = inventory[0];
     const newRow: RecipeIngredientItem = {
       ingredient_id: defaultIngredient ? defaultIngredient.id : '',
-      quantity: 30,
-      unit_id: defaultIngredient?.default_unit_id || activeUnits[0]?.id || 'u-ml',
-      custom_unit_symbol: 'ml',
+      quantity: 1, // Default 1 oz
+      unit_id: defaultIngredient?.default_unit_id || ozUnit?.id || 'u-oz',
+      custom_unit_symbol: 'oz',
       sort_order: ingredients.length + 1,
       note: '',
       ingredient_name: defaultIngredient?.name || '',
-      unit_symbol: 'ml',
+      unit_symbol: defaultIngredient?.default_unit_symbol || 'oz',
     };
     onChange([...ingredients, newRow]);
   };
@@ -43,6 +49,10 @@ export const IngredientsSection: React.FC<IngredientsSectionProps> = ({
       sort_order: idx + 1,
     }));
     onChange(updated);
+    if (creatingRowIndex === index) {
+      setCreatingRowIndex(null);
+      setNewIngredientName('');
+    }
   };
 
   const handleMove = (index: number, direction: 'up' | 'down') => {
@@ -85,7 +95,7 @@ export const IngredientsSection: React.FC<IngredientsSectionProps> = ({
         if (match.default_unit_id) {
           clone[index].unit_id = match.default_unit_id;
           const u = activeUnits.find((unit) => unit.id === match.default_unit_id);
-          clone[index].unit_symbol = u?.symbol || clone[index].unit_symbol;
+          clone[index].unit_symbol = u?.symbol || clone[index].unit_symbol || 'oz';
         }
       }
     }
@@ -93,21 +103,45 @@ export const IngredientsSection: React.FC<IngredientsSectionProps> = ({
     // If unit_id changed, update symbol
     if (field === 'unit_id') {
       const u = activeUnits.find((unit) => unit.id === value);
-      clone[index].unit_symbol = u?.symbol || '';
+      clone[index].unit_symbol = u?.symbol || 'oz';
     }
 
     onChange(clone);
   };
 
   // Quick create ingredient if user inputs an ingredient that doesn't exist yet
-  const handleCreateQuickIngredient = async (name: string, index: number) => {
-    if (!name.trim()) return;
+  const handleQuickCreate = async (index: number, name: string) => {
+    if (!name.trim()) {
+      alert('กรุณากรอกชื่อวัตถุดิบใหม่');
+      return;
+    }
     try {
-      const created = await ingredientService.createIngredient({ name: name.trim() });
-      onRefreshInventory();
-      handleFieldChange(index, 'ingredient_id', created.id);
+      setIsSubmittingQuickAdd(true);
+      // Create with default unit oz
+      const created = await ingredientService.createIngredient({
+        name: name.trim(),
+        default_unit_id: ozUnit?.id || 'u-oz',
+      });
+      await onRefreshInventory();
+
+      // Immediately select newly created ingredient for this row
+      const clone = [...ingredients];
+      clone[index] = {
+        ...clone[index],
+        ingredient_id: created.id,
+        ingredient_name: created.name,
+        unit_id: ozUnit?.id || 'u-oz',
+        unit_symbol: 'oz',
+        custom_unit_symbol: 'oz',
+      };
+      onChange(clone);
+
+      setCreatingRowIndex(null);
+      setNewIngredientName('');
     } catch (err: any) {
       alert(err.message || 'ไม่สามารถสร้างวัตถุดิบใหม่ได้');
+    } finally {
+      setIsSubmittingQuickAdd(false);
     }
   };
 
@@ -120,7 +154,7 @@ export const IngredientsSection: React.FC<IngredientsSectionProps> = ({
             Section C: ส่วนผสมและอัตราส่วน (Ingredients & Measurements)
           </h2>
           <p className="text-xs text-cafe-muted">
-            บันทึกส่วนผสม ปริมาณ หน่วยวัด และโน้ตเฉพาะตัว เชื่อมโยงกับคลังวัตถุดิบ
+            บันทึกส่วนผสม ปริมาณ และหน่วยวัด (เน้นหน่วย oz เป็นหลัก หากไม่มีวัตถุดิบสามารถพิมพ์เพิ่มชื่อใหม่ได้ทันที)
           </p>
         </div>
 
@@ -155,7 +189,7 @@ export const IngredientsSection: React.FC<IngredientsSectionProps> = ({
             <div className="col-span-1 text-center">ลำดับ</div>
             <div className="col-span-4">วัตถุดิบ (Ingredient)</div>
             <div className="col-span-2">ปริมาณ (Qty)</div>
-            <div className="col-span-2">หน่วย (Unit)</div>
+            <div className="col-span-2">หน่วย (Unit) [เน้น oz]</div>
             <div className="col-span-2">โน้ตเพิ่มเติม</div>
             <div className="col-span-1 text-right">จัดการ</div>
           </div>
@@ -191,20 +225,86 @@ export const IngredientsSection: React.FC<IngredientsSectionProps> = ({
                 </div>
               </div>
 
-              {/* Ingredient selector */}
+              {/* Ingredient selector / Quick Add Input */}
               <div className="sm:col-span-4">
-                <select
-                  value={item.ingredient_id}
-                  onChange={(e) => handleFieldChange(index, 'ingredient_id', e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-cafe-surface dark:bg-cafe-darkCard border border-cafe-border dark:border-cafe-darkBorder text-xs text-cafe-text dark:text-cafe-cream focus:ring-1 focus:ring-cafe-copper focus:outline-none"
-                >
-                  <option value="">-- เลือกวัตถุดิบ --</option>
-                  {inventory.map((ing) => (
-                    <option key={ing.id} value={ing.id}>
-                      {ing.name} {ing.brand ? `(${ing.brand})` : ''}
-                    </option>
-                  ))}
-                </select>
+                {creatingRowIndex === index ? (
+                  <div className="flex items-center gap-1 animate-in fade-in">
+                    <input
+                      type="text"
+                      value={newIngredientName}
+                      onChange={(e) => setNewIngredientName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleQuickCreate(index, newIngredientName);
+                        }
+                      }}
+                      placeholder="ใส่ชื่อวัตถุดิบใหม่..."
+                      className="w-full px-2.5 py-1.5 rounded-lg bg-cafe-surface dark:bg-cafe-darkCard border border-cafe-copper text-xs text-cafe-text dark:text-cafe-cream focus:ring-1 focus:ring-cafe-copper focus:outline-none"
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      disabled={isSubmittingQuickAdd}
+                      onClick={() => handleQuickCreate(index, newIngredientName)}
+                      className="px-2 py-1.5 bg-cafe-copper text-white rounded-lg text-xs font-semibold hover:bg-cafe-copper-hover flex-shrink-0"
+                    >
+                      {isSubmittingQuickAdd ? '...' : 'เพิ่ม'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCreatingRowIndex(null);
+                        setNewIngredientName('');
+                      }}
+                      className="p-1.5 text-cafe-muted hover:text-cafe-text"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1">
+                    <select
+                      value={item.ingredient_id}
+                      onChange={(e) => {
+                        if (e.target.value === '__NEW__') {
+                          setCreatingRowIndex(index);
+                          setNewIngredientName('');
+                        } else {
+                          handleFieldChange(index, 'ingredient_id', e.target.value);
+                        }
+                      }}
+                      className="w-full px-3 py-2 rounded-lg bg-cafe-surface dark:bg-cafe-darkCard border border-cafe-border dark:border-cafe-darkBorder text-xs text-cafe-text dark:text-cafe-cream focus:ring-1 focus:ring-cafe-copper focus:outline-none"
+                    >
+                      <option value="">-- เลือกวัตถุดิบ --</option>
+                      <option
+                        value="__NEW__"
+                        className="font-semibold text-cafe-copper bg-amber-50 dark:bg-amber-950/40"
+                      >
+                        ➕ เพิ่มวัตถุดิบใหม่ (ใส่แค่ชื่อ)...
+                      </option>
+                      <optgroup label="คลังวัตถุดิบที่มีอยู่">
+                        {inventory.map((ing) => (
+                          <option key={ing.id} value={ing.id}>
+                            {ing.name} {ing.brand ? `(${ing.brand})` : ''}
+                          </option>
+                        ))}
+                      </optgroup>
+                    </select>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCreatingRowIndex(index);
+                        setNewIngredientName('');
+                      }}
+                      title="เพิ่มวัตถุดิบใหม่แบบเร็ว (ใส่แค่ชื่อ)"
+                      className="p-2 text-cafe-copper hover:text-cafe-copper-hover bg-cafe-cream/80 dark:bg-cafe-darkCard rounded-lg border border-cafe-border/80 dark:border-cafe-darkBorder flex-shrink-0"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Quantity */}
@@ -221,18 +321,26 @@ export const IngredientsSection: React.FC<IngredientsSectionProps> = ({
                 />
               </div>
 
-              {/* Unit */}
+              {/* Unit (Emphasizing oz) */}
               <div className="sm:col-span-2">
                 <select
-                  value={item.unit_id || ''}
+                  value={item.unit_id || ozUnit?.id || ''}
                   onChange={(e) => handleFieldChange(index, 'unit_id', e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-cafe-surface dark:bg-cafe-darkCard border border-cafe-border dark:border-cafe-darkBorder text-xs text-cafe-text dark:text-cafe-cream focus:ring-1 focus:ring-cafe-copper focus:outline-none font-mono"
+                  className="w-full px-3 py-2 rounded-lg bg-cafe-surface dark:bg-cafe-darkCard border border-cafe-border dark:border-cafe-darkBorder text-xs text-cafe-text dark:text-cafe-cream focus:ring-1 focus:ring-cafe-copper focus:outline-none font-mono font-medium"
                 >
-                  {activeUnits.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.symbol} ({u.name})
+                  {/* Prioritize oz at the top */}
+                  {ozUnit && (
+                    <option value={ozUnit.id} className="font-bold text-cafe-copper">
+                      ⭐ oz (ออนซ์) [หลัก]
                     </option>
-                  ))}
+                  )}
+                  {activeUnits
+                    .filter((u) => u.id !== ozUnit?.id)
+                    .map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.symbol} ({u.name})
+                      </option>
+                    ))}
                 </select>
               </div>
 
@@ -242,7 +350,7 @@ export const IngredientsSection: React.FC<IngredientsSectionProps> = ({
                   type="text"
                   value={item.note || ''}
                   onChange={(e) => handleFieldChange(index, 'note', e.target.value)}
-                  placeholder="เช่น ตีฟองนุ่ม, สกัด 1:2"
+                  placeholder="เช่น หวาน 50%, ช็อตสกัด"
                   className="w-full px-3 py-2 rounded-lg bg-cafe-surface dark:bg-cafe-darkCard border border-cafe-border dark:border-cafe-darkBorder text-xs text-cafe-text dark:text-cafe-cream focus:ring-1 focus:ring-cafe-copper focus:outline-none"
                 />
               </div>
