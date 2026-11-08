@@ -7,8 +7,8 @@ interface AuthContextType {
   user: UserProfile | null;
   isLoading: boolean;
   isSupabaseConnected: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, fullName: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<any>;
+  signUp: (email: string, password: string, fullName: string) => Promise<any>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -44,13 +44,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    await authService.signIn(email, password);
+    const data = await authService.signIn(email, password);
     await fetchUser();
+    return data;
   };
 
   const signUp = async (email: string, password: string, fullName: string) => {
-    await authService.signUp(email, password, fullName);
+    const data = await authService.signUp(email, password, fullName);
     await fetchUser();
+    return data;
   };
 
   const signOut = async () => {

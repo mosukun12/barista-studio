@@ -88,7 +88,10 @@ export const authService = {
     }
     // Local mode simulate signup
     localStorage.setItem('barista_studio_local_user', email);
-    return { user: { email, user_metadata: { full_name: fullName } } };
+    return {
+      user: { id: 'local-barista-01', email, user_metadata: { full_name: fullName } },
+      session: { access_token: 'local-token' } as any,
+    };
   },
 
   async signOut() {

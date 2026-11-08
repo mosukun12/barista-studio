@@ -37,26 +37,31 @@ export const AuthPage: React.FC = () => {
           setIsLoading(false);
           return;
         }
-        await signUp(email.trim(), password, fullName.trim());
-        setSuccessMsg(
-          'สมัครสมาชิกสำเร็จ! หากระบบ Supabase เปิด "Confirm email" ไว้ กรุณาตรวจสอบกล่องจดหมาย หรือปิด Confirm email ใน Dashboard ก่อนเข้าสู่ระบบ'
-        );
-        setTimeout(() => {
-          setMode('signin');
-          setIsLoading(false);
-        }, 2000);
+        const data = await signUp(email.trim(), password, fullName.trim());
+        if (data?.session) {
+          setSuccessMsg('สร้างบัญชีและเข้าสู่ระบบสำเร็จ! กำลังนำท่านเข้าสู่ Dashboard...');
+          setTimeout(() => navigate('/'), 800);
+        } else {
+          setSuccessMsg('สร้างบัญชีสำเร็จแล้ว! กำลังเข้าสู่ระบบ...');
+          setTimeout(() => navigate('/'), 1000);
+        }
         return;
       }
     } catch (err: any) {
+      console.error('Auth error:', err);
       const msg = err?.message || '';
-      if (msg.includes('Email not confirmed')) {
-        setErrorMsg('อีเมลนี้ยังไม่ได้กดยืนยัน กรุณาเช็คอีเมล หรือเข้าไปที่ Supabase Dashboard > Authentication > Providers > Email เพื่อปิดสวิตช์ "Confirm email"');
+      if (msg.includes('User already registered') || msg.includes('already registered')) {
+        setErrorMsg('อีเมลนี้ถูกลงทะเบียนไปแล้ว! กรุณาสลับไปที่แท็บ "เข้าสู่ระบบ" ด้านบน หรือลองใช้อีเมลใหม่');
+      } else if (msg.includes('Database error') || msg.includes('error saving new user')) {
+        setErrorMsg('เกิดข้อผิดพลาดจากฐานข้อมูล Supabase (Database Error): กรุณารันคำสั่ง SQL สร้างตารางใน SQL Editor ให้เสร็จสิ้นก่อน');
+      } else if (msg.includes('Password should be')) {
+        setErrorMsg('รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร');
+      } else if (msg.includes('Email not confirmed')) {
+        setErrorMsg('อีเมลนี้ยังไม่ได้กดยืนยัน กรุณาเช็คกล่องจดหมาย หรือไปปิด Confirm email ใน Supabase');
       } else if (msg.includes('Invalid login credentials')) {
-        setErrorMsg('อีเมลหรือรหัสผ่านไม่ถูกต้อง (หากเพิ่งสมัคร กรุณาตรวจสอบว่าได้ยืนยันอีเมลหรือปิด Confirm email ใน Supabase แล้วหรือไม่)');
-      } else if (msg.includes('User already registered')) {
-        setErrorMsg('อีเมลนี้ถูกลงทะเบียนไปแล้ว กรุณาสลับไปที่แท็บ "เข้าสู่ระบบ"');
+        setErrorMsg('อีเมลหรือรหัสผ่านไม่ถูกต้อง');
       } else {
-        setErrorMsg(msg || 'การเข้าสู่ระบบล้มเหลว กรุณาตรวจสอบข้อมูล');
+        setErrorMsg(msg || 'การดำเนินการล้มเหลว กรุณาตรวจสอบข้อมูล');
       }
     } finally {
       setIsLoading(false);
