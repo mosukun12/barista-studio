@@ -15,6 +15,7 @@ import {
 import { Button } from '../components/common/Button';
 import { Modal } from '../components/common/Modal';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
+import { MarkdownView } from '../components/common/MarkdownView';
 
 interface GuideItem {
   id: string;
@@ -270,8 +271,8 @@ export const TrainingPage: React.FC = () => {
           </div>
 
           {/* Formatted Guide Content */}
-          <div className="p-6 rounded-2xl bg-cafe-cream/40 dark:bg-cafe-darkSurface/60 border border-cafe-border/60 dark:border-cafe-darkBorder text-sm leading-relaxed whitespace-pre-wrap font-sans text-cafe-text dark:text-stone-200">
-            {selectedGuide.content}
+          <div className="p-6 sm:p-8 rounded-2xl bg-cafe-cream/40 dark:bg-cafe-darkSurface/60 border border-cafe-border/60 dark:border-cafe-darkBorder">
+            <MarkdownView content={selectedGuide.content} />
           </div>
         </div>
       ) : (
@@ -404,8 +405,12 @@ export const TrainingPage: React.FC = () => {
                   required
                 />
               ) : (
-                <div className="p-4 rounded-xl bg-cafe-cream/40 dark:bg-cafe-darkSurface/60 border border-cafe-border dark:border-cafe-darkBorder min-h-[190px] text-xs leading-relaxed whitespace-pre-wrap">
-                  {editingGuide.content || '(ยังไม่มีข้อความ)'}
+                <div className="p-4 rounded-xl bg-cafe-cream/40 dark:bg-cafe-darkSurface/60 border border-cafe-border dark:border-cafe-darkBorder min-h-[190px]">
+                  {editingGuide.content ? (
+                    <MarkdownView content={editingGuide.content} />
+                  ) : (
+                    <span className="text-xs text-cafe-muted italic">(ยังไม่มีข้อความ)</span>
+                  )}
                 </div>
               )}
             </div>

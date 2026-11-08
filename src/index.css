@@ -48,3 +48,73 @@
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(122, 111, 104, 0.4);
 }
+
+/* Beautiful Café Markdown Typography */
+.prose-cafe h1 {
+  @apply text-xl font-bold tracking-tight text-cafe-text dark:text-cafe-cream mt-6 mb-3 pb-1 border-b border-cafe-border/50 dark:border-cafe-darkBorder;
+}
+
+.prose-cafe h2 {
+  @apply text-lg font-bold tracking-tight text-cafe-text dark:text-cafe-cream mt-5 mb-2.5 pb-1 border-b border-cafe-border/40 dark:border-cafe-darkBorder;
+}
+
+.prose-cafe h3 {
+  @apply text-base font-bold text-cafe-copper dark:text-cafe-brass mt-4 mb-2;
+}
+
+.prose-cafe h4 {
+  @apply text-sm font-semibold text-cafe-text dark:text-cafe-cream mt-3 mb-1.5;
+}
+
+.prose-cafe p {
+  @apply mb-3 leading-relaxed;
+}
+
+.prose-cafe ul {
+  @apply list-disc list-outside pl-5 mb-3 space-y-1;
+}
+
+.prose-cafe ol {
+  @apply list-decimal list-outside pl-5 mb-3 space-y-1;
+}
+
+.prose-cafe li {
+  @apply leading-relaxed;
+}
+
+.prose-cafe strong,
+.prose-cafe b {
+  @apply font-bold text-cafe-text dark:text-white;
+}
+
+.prose-cafe blockquote {
+  @apply pl-4 border-l-4 border-cafe-copper/70 my-3 italic text-cafe-muted dark:text-stone-400 bg-cafe-sand/20 dark:bg-cafe-darkSurface/50 py-1.5 rounded-r-lg;
+}
+
+.prose-cafe code {
+  @apply font-mono text-xs px-1.5 py-0.5 rounded bg-cafe-sand/50 dark:bg-cafe-darkCard text-cafe-copper dark:text-cafe-brass font-medium;
+}
+
+.prose-cafe pre {
+  @apply p-3 rounded-xl bg-cafe-espresso text-cafe-cream dark:bg-black/70 overflow-x-auto my-3 font-mono text-xs border border-cafe-border/30 dark:border-cafe-darkBorder;
+}
+
+.prose-cafe pre code {
+  @apply p-0 bg-transparent text-inherit;
+}
+
+.prose-cafe hr {
+  @apply my-5 border-cafe-border dark:border-cafe-darkBorder;
+}
+
+.prose-cafe table {
+  @apply w-full border-collapse my-3 text-xs;
+}
+
+.prose-cafe th {
+  @apply bg-cafe-sand/40 dark:bg-cafe-darkCard p-2 border border-cafe-border dark:border-cafe-darkBorder text-left font-semibold;
+}
+
+.prose-cafe td {
+  @apply p-2 border border-cafe-border dark:border-cafe-darkBorder;
+}
