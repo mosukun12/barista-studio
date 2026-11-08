@@ -38,11 +38,26 @@ export const AuthPage: React.FC = () => {
           return;
         }
         await signUp(email.trim(), password, fullName.trim());
-        setSuccessMsg('สมัครสมาชิกสำเร็จ! กำลังเข้าสู่ระบบ...');
-        setTimeout(() => navigate('/'), 1200);
+        setSuccessMsg(
+          'สมัครสมาชิกสำเร็จ! หากระบบ Supabase เปิด "Confirm email" ไว้ กรุณาตรวจสอบกล่องจดหมาย หรือปิด Confirm email ใน Dashboard ก่อนเข้าสู่ระบบ'
+        );
+        setTimeout(() => {
+          setMode('signin');
+          setIsLoading(false);
+        }, 2000);
+        return;
       }
     } catch (err: any) {
-      setErrorMsg(err.message || 'การเข้าสู่ระบบล้มเหลว กรุณาตรวจสอบข้อมูล');
+      const msg = err?.message || '';
+      if (msg.includes('Email not confirmed')) {
+        setErrorMsg('อีเมลนี้ยังไม่ได้กดยืนยัน กรุณาเช็คอีเมล หรือเข้าไปที่ Supabase Dashboard > Authentication > Providers > Email เพื่อปิดสวิตช์ "Confirm email"');
+      } else if (msg.includes('Invalid login credentials')) {
+        setErrorMsg('อีเมลหรือรหัสผ่านไม่ถูกต้อง (หากเพิ่งสมัคร กรุณาตรวจสอบว่าได้ยืนยันอีเมลหรือปิด Confirm email ใน Supabase แล้วหรือไม่)');
+      } else if (msg.includes('User already registered')) {
+        setErrorMsg('อีเมลนี้ถูกลงทะเบียนไปแล้ว กรุณาสลับไปที่แท็บ "เข้าสู่ระบบ"');
+      } else {
+        setErrorMsg(msg || 'การเข้าสู่ระบบล้มเหลว กรุณาตรวจสอบข้อมูล');
+      }
     } finally {
       setIsLoading(false);
     }
