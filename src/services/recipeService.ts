@@ -1,6 +1,29 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
-import { Recipe, RecipeFilterOptions, RecipeVersionItem } from '../types';
+import { Recipe, RecipeFilterOptions, RecipeStepItem, RecipeVersionItem } from '../types';
 import { localStore } from './localStore';
+
+function parseStep(st: any): RecipeStepItem {
+  let ingredients: string[] = Array.isArray(st.ingredients) ? st.ingredients : [];
+  let additional_note = st.additional_note;
+  if (additional_note && typeof additional_note === 'string') {
+    try {
+      if (additional_note.startsWith('{') && additional_note.includes('"ingredients"')) {
+        const parsed = JSON.parse(additional_note);
+        if (Array.isArray(parsed.ingredients)) {
+          ingredients = parsed.ingredients;
+        }
+        additional_note = parsed.note || null;
+      }
+    } catch {
+      // not JSON format, keep as is
+    }
+  }
+  return {
+    ...st,
+    additional_note,
+    ingredients,
+  };
+}
 
 export const recipeService = {
   async getRecipes(filters?: Partial<RecipeFilterOptions>): Promise<Recipe[]> {
@@ -66,7 +89,9 @@ export const recipeService = {
             ingredient_brand: ing.ingredients?.brand,
             unit_symbol: ing.measurement_units?.symbol || ing.custom_unit_symbol,
           })),
-        steps: (row.recipe_steps || []).sort((a: any, b: any) => a.step_number - b.step_number),
+        steps: (row.recipe_steps || [])
+          .sort((a: any, b: any) => a.step_number - b.step_number)
+          .map(parseStep),
         notes: (row.recipe_notes || []).sort((a: any, b: any) => a.sort_order - b.sort_order),
       }));
     } else {
@@ -150,7 +175,9 @@ export const recipeService = {
             ingredient_brand: ing.ingredients?.brand,
             unit_symbol: ing.measurement_units?.symbol || ing.custom_unit_symbol,
           })),
-        steps: (row.recipe_steps || []).sort((a: any, b: any) => a.step_number - b.step_number),
+        steps: (row.recipe_steps || [])
+          .sort((a: any, b: any) => a.step_number - b.step_number)
+          .map(parseStep),
         notes: (row.recipe_notes || []).sort((a: any, b: any) => a.sort_order - b.sort_order),
       };
     }
@@ -236,16 +263,25 @@ export const recipeService = {
 
       // 3. Insert steps if any
       if (newRecipe.steps && newRecipe.steps.length > 0) {
-        const stepRows = newRecipe.steps.map((st, idx) => ({
-          recipe_id: newRecipe.id,
-          step_number: idx + 1,
-          title: st.title,
-          description: st.description || null,
-          duration_seconds: st.duration_seconds || 0,
-          equipment: st.equipment || null,
-          image_url: st.image_url || null,
-          additional_note: st.additional_note || null,
-        }));
+        const stepRows = newRecipe.steps.map((st, idx) => {
+          let additional_note = st.additional_note || null;
+          if (st.ingredients && st.ingredients.length > 0) {
+            additional_note = JSON.stringify({
+              ingredients: st.ingredients,
+              note: st.additional_note || '',
+            });
+          }
+          return {
+            recipe_id: newRecipe.id,
+            step_number: idx + 1,
+            title: st.title,
+            description: st.description || null,
+            duration_seconds: st.duration_seconds || 0,
+            equipment: st.equipment || null,
+            image_url: st.image_url || null,
+            additional_note,
+          };
+        });
         await client.from('recipe_steps').insert(stepRows);
       }
 
@@ -329,16 +365,25 @@ export const recipeService = {
       if (updates.steps !== undefined) {
         await client.from('recipe_steps').delete().eq('recipe_id', id);
         if (updates.steps.length > 0) {
-          const stepRows = updates.steps.map((st, idx) => ({
-            recipe_id: id,
-            step_number: idx + 1,
-            title: st.title,
-            description: st.description || null,
-            duration_seconds: st.duration_seconds || 0,
-            equipment: st.equipment || null,
-            image_url: st.image_url || null,
-            additional_note: st.additional_note || null,
-          }));
+          const stepRows = updates.steps.map((st, idx) => {
+            let additional_note = st.additional_note || null;
+            if (st.ingredients && st.ingredients.length > 0) {
+              additional_note = JSON.stringify({
+                ingredients: st.ingredients,
+                note: st.additional_note || '',
+              });
+            }
+            return {
+              recipe_id: id,
+              step_number: idx + 1,
+              title: st.title,
+              description: st.description || null,
+              duration_seconds: st.duration_seconds || 0,
+              equipment: st.equipment || null,
+              image_url: st.image_url || null,
+              additional_note,
+            };
+          });
           await client.from('recipe_steps').insert(stepRows);
         }
       }

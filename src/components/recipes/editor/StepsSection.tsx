@@ -1,15 +1,16 @@
 import React from 'react';
-import { Plus, Trash2, ArrowUp, ArrowDown, Clock, Wrench, Image as ImageIcon, Sparkles, X } from 'lucide-react';
-import { RecipeStepItem } from '../../../types';
+import { Plus, Trash2, ArrowUp, ArrowDown, Clock, Wrench, Image as ImageIcon, Sparkles, X, Beaker, Check } from 'lucide-react';
+import { RecipeStepItem, RecipeIngredientItem } from '../../../types';
 import { Button } from '../../common/Button';
 import { uploadImage } from '../../../services/storageService';
 
 interface StepsSectionProps {
   steps: RecipeStepItem[];
   onChange: (items: RecipeStepItem[]) => void;
+  availableIngredients?: RecipeIngredientItem[];
 }
 
-export const StepsSection: React.FC<StepsSectionProps> = ({ steps, onChange }) => {
+export const StepsSection: React.FC<StepsSectionProps> = ({ steps, onChange, availableIngredients = [] }) => {
   const handleAddStep = () => {
     const newStep: RecipeStepItem = {
       step_number: steps.length + 1,
@@ -19,6 +20,7 @@ export const StepsSection: React.FC<StepsSectionProps> = ({ steps, onChange }) =
       equipment: '',
       image_url: null,
       additional_note: '',
+      ingredients: [],
     };
     onChange([...steps, newStep]);
   };
@@ -71,6 +73,24 @@ export const StepsSection: React.FC<StepsSectionProps> = ({ steps, onChange }) =
     } catch (err: any) {
       alert(err.message || 'ไม่สามารถอัปโหลดรูปภาพขั้นตอนได้');
     }
+  };
+
+  const toggleStepIngredient = (stepIndex: number, ingredientLabel: string) => {
+    const clone = [...steps];
+    const currentList = Array.isArray(clone[stepIndex].ingredients)
+      ? clone[stepIndex].ingredients!
+      : [];
+    let updated: string[];
+    if (currentList.includes(ingredientLabel)) {
+      updated = currentList.filter((item) => item !== ingredientLabel);
+    } else {
+      updated = [...currentList, ingredientLabel];
+    }
+    clone[stepIndex] = {
+      ...clone[stepIndex],
+      ingredients: updated,
+    };
+    onChange(clone);
   };
 
   return (
@@ -234,6 +254,63 @@ export const StepsSection: React.FC<StepsSectionProps> = ({ steps, onChange }) =
                     </label>
                   )}
                 </div>
+              </div>
+
+              {/* Step Ingredients List (Selected from Section C) */}
+              <div className="pt-2 border-t border-cafe-border/60 dark:border-cafe-darkBorder/60 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-cafe-text dark:text-stone-300 flex items-center gap-1.5">
+                    <Beaker className="w-3.5 h-3.5 text-cafe-copper" />
+                    วัตถุดิบที่ใช้ในขั้นตอนนี้ (จาก Section C)
+                  </span>
+                  {(step.ingredients || []).length > 0 && (
+                    <span className="text-[10px] text-cafe-copper font-medium">
+                      เลือกแล้ว {(step.ingredients || []).length} รายการ
+                    </span>
+                  )}
+                </div>
+
+                {availableIngredients.length === 0 ? (
+                  <p className="text-[11px] text-cafe-muted italic py-0.5">
+                    ยังไม่มีรายการวัตถุดิบใน Section C (สามารถเพิ่มวัตถุดิบใน Section C ด้านบน แล้วจะปรากฏให้เลือกที่นี่)
+                  </p>
+                ) : (
+                  <div className="space-y-1.5">
+                    <p className="text-[11px] text-cafe-muted">
+                      แตะเพื่อเลือกหรือยกเลิกวัตถุดิบที่ใช้ในขั้นตอนนี้:
+                    </p>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {availableIngredients.map((ing, ingIdx) => {
+                        const ingLabel = `${ing.ingredient_name || 'วัตถุดิบ'}${ing.quantity ? ` ${ing.quantity}` : ''}${ing.unit_symbol ? ` ${ing.unit_symbol}` : ''}`;
+                        const isSelected = (step.ingredients || []).includes(ingLabel);
+
+                        return (
+                          <button
+                            key={ing.id || `${ing.ingredient_id}-${ingIdx}`}
+                            type="button"
+                            onClick={() => toggleStepIngredient(index, ingLabel)}
+                            className={`text-xs px-2.5 py-1 rounded-xl border transition-all flex items-center gap-1.5 cursor-pointer ${
+                              isSelected
+                                ? 'bg-cafe-copper/15 border-cafe-copper text-cafe-copper dark:text-cafe-cream font-medium shadow-xs ring-1 ring-cafe-copper/40'
+                                : 'bg-cafe-surface dark:bg-cafe-darkCard border-cafe-border/80 dark:border-cafe-darkBorder text-cafe-muted hover:border-cafe-copper/50 hover:text-cafe-text'
+                            }`}
+                          >
+                            <span
+                              className={`w-3.5 h-3.5 rounded flex items-center justify-center text-[9px] border ${
+                                isSelected
+                                  ? 'bg-cafe-copper text-white border-cafe-copper font-bold'
+                                  : 'border-cafe-border dark:border-cafe-darkBorder bg-cafe-cream/50 dark:bg-cafe-darkSurface'
+                              }`}
+                            >
+                              {isSelected && '✓'}
+                            </span>
+                            <span>{ingLabel}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           ))}

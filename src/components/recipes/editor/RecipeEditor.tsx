@@ -282,6 +282,7 @@ export const RecipeEditor: React.FC<RecipeEditorProps> = ({ initialRecipe, isNew
         <StepsSection
           steps={recipe.steps || []}
           onChange={(items) => handleRecipeChange({ steps: items })}
+          availableIngredients={recipe.ingredients || []}
         />
 
         {/* Section E: Techniques & Notes */}

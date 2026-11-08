@@ -15,6 +15,7 @@ import {
   History,
   CheckCircle2,
   Share2,
+  Beaker,
 } from 'lucide-react';
 import { Recipe, RecipeVersionItem } from '../types';
 import { recipeService } from '../services/recipeService';
@@ -393,6 +394,24 @@ export const RecipeDetailPage: React.FC = () => {
                       <p className="text-xs text-cafe-muted dark:text-stone-300 leading-relaxed pl-8">
                         {step.description}
                       </p>
+                    )}
+
+                    {/* Step Ingredients List */}
+                    {step.ingredients && step.ingredients.length > 0 && (
+                      <div className="pl-8 flex flex-wrap items-center gap-1.5 pt-0.5">
+                        <span className="text-[11px] text-cafe-muted flex items-center gap-1 font-medium mr-0.5">
+                          <Beaker className="w-3 h-3 text-cafe-copper" />
+                          วัตถุดิบ:
+                        </span>
+                        {step.ingredients.map((ing, iIdx) => (
+                          <span
+                            key={iIdx}
+                            className="px-2 py-0.5 rounded-md text-[11px] bg-cafe-copper/10 text-cafe-copper dark:text-cafe-cream border border-cafe-copper/20 font-medium"
+                          >
+                            {ing}
+                          </span>
+                        ))}
+                      </div>
                     )}
 
                     {step.equipment && (

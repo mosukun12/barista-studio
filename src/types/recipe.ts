@@ -65,6 +65,7 @@ export interface RecipeStepItem {
   equipment?: string | null;
   image_url?: string | null;
   additional_note?: string | null;
+  ingredients?: string[]; // รายการวัตถุดิบที่ใช้ในขั้นตอนนี้ (ดึงจาก Section C)
 }
 
 export interface RecipeNoteItem {

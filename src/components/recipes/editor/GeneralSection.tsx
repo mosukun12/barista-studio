@@ -70,19 +70,23 @@ export const GeneralSection: React.FC<GeneralSectionProps> = ({
           </label>
           <div
             onClick={() => fileInputRef.current?.click()}
-            className="group relative h-52 w-full rounded-2xl border-2 border-dashed border-cafe-border dark:border-cafe-darkBorder hover:border-cafe-copper dark:hover:border-cafe-copper flex flex-col items-center justify-center p-4 text-center cursor-pointer overflow-hidden bg-cafe-cream/40 dark:bg-cafe-darkSurface/50 transition-colors"
+            className={`group relative w-full rounded-2xl border-2 border-dashed border-cafe-border dark:border-cafe-darkBorder hover:border-cafe-copper dark:hover:border-cafe-copper flex flex-col items-center justify-center text-center cursor-pointer overflow-hidden bg-cafe-cream/40 dark:bg-cafe-darkSurface/50 transition-all ${
+              recipe.cover_image_url
+                ? 'p-2 min-h-[160px] max-h-[480px]'
+                : 'h-52 p-4'
+            }`}
           >
             {recipe.cover_image_url ? (
-              <>
+              <div className="relative w-full h-full flex items-center justify-center">
                 <img
                   src={recipe.cover_image_url}
                   alt="Cover"
-                  className="w-full h-full object-cover rounded-xl"
+                  className="w-full h-auto max-h-[460px] object-contain rounded-xl"
                 />
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white text-xs font-medium">
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white text-xs font-medium rounded-xl backdrop-blur-[2px]">
                   คลิกเพื่อเปลี่ยนรูปภาพ
                 </div>
-              </>
+              </div>
             ) : (
               <div className="space-y-2 text-cafe-muted">
                 {isUploading ? (

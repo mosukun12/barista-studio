@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Coffee, Sparkles } from 'lucide-react';
 import { Recipe, RecipeFilterOptions, Category } from '../types';
@@ -32,11 +32,21 @@ export const RecipesPage: React.FC = () => {
   const [deletingRecipeId, setDeletingRecipeId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Load backend data only when underlying query parameters change (not on search typing)
   const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
+      const queryParams: Partial<RecipeFilterOptions> = {
+        category: filters.category,
+        status: filters.status,
+        drinkType: filters.drinkType,
+        sortBy: filters.sortBy,
+        sortOrder: filters.sortOrder,
+        showArchived: filters.showArchived,
+      };
+
       const [recipeData, categoryData] = await Promise.all([
-        recipeService.getRecipes(filters),
+        recipeService.getRecipes(queryParams),
         ingredientService.getCategories('recipe'),
       ]);
       setRecipes(recipeData);
@@ -46,11 +56,32 @@ export const RecipesPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [filters]);
+  }, [
+    filters.category,
+    filters.status,
+    filters.drinkType,
+    filters.sortBy,
+    filters.sortOrder,
+    filters.showArchived,
+  ]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Client-side instant filter: ensures 0 layout jitter, 0 skeleton flash when typing
+  const filteredRecipes = useMemo(() => {
+    if (!filters.searchQuery?.trim()) return recipes;
+    const q = filters.searchQuery.toLowerCase().trim();
+    return recipes.filter(
+      (r) =>
+        r.name_th?.toLowerCase().includes(q) ||
+        (r.name_en && r.name_en.toLowerCase().includes(q)) ||
+        (r.description && r.description.toLowerCase().includes(q)) ||
+        r.tags?.some((t) => t.toLowerCase().includes(q)) ||
+        r.ingredients?.some((ing) => ing.ingredient_name?.toLowerCase().includes(q))
+    );
+  }, [recipes, filters.searchQuery]);
 
   const handleFilterChange = (updates: Partial<RecipeFilterOptions>) => {
     setFilters((prev) => ({ ...prev, ...updates }));
@@ -119,7 +150,7 @@ export const RecipesPage: React.FC = () => {
         categories={categories}
         viewMode={viewMode}
         onViewModeChange={setViewMode}
-        totalCount={recipes.length}
+        totalCount={filteredRecipes.length}
       />
 
       {/* Content representation */}
@@ -132,7 +163,7 @@ export const RecipesPage: React.FC = () => {
             />
           ))}
         </div>
-      ) : recipes.length === 0 ? (
+      ) : filteredRecipes.length === 0 ? (
         <EmptyState
           title={
             filters.searchQuery || filters.category !== 'all' || filters.status !== 'all'
@@ -150,7 +181,7 @@ export const RecipesPage: React.FC = () => {
         />
       ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {recipes.map((recipe) => (
+          {filteredRecipes.map((recipe) => (
             <RecipeCard
               key={recipe.id}
               recipe={recipe}
@@ -176,7 +207,7 @@ export const RecipesPage: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {recipes.map((recipe) => (
+              {filteredRecipes.map((recipe) => (
                 <RecipeTableRow
                   key={recipe.id}
                   recipe={recipe}
