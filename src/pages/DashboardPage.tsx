@@ -62,7 +62,7 @@ export const DashboardPage: React.FC = () => {
   return (
     <div className="space-y-8 pb-16">
       {/* Welcome Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-cafe-espresso via-[#2A1D18] to-cafe-espresso text-cafe-cream p-6 sm:p-10 shadow-cafe-card">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#241C18] via-[#1C1613] to-[#14100E] border border-cafe-copper/30 dark:border-[#3A302A] text-cafe-cream p-6 sm:p-10">
         <div className="relative z-10 max-w-2xl space-y-3">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-cafe-copper/20 text-cafe-brass border border-cafe-copper/30">
             <Sparkles className="w-3.5 h-3.5" />
@@ -96,8 +96,8 @@ export const DashboardPage: React.FC = () => {
         </div>
 
         {/* Decorative background element */}
-        <div className="absolute right-[-40px] bottom-[-40px] opacity-10 pointer-events-none">
-          <Coffee className="w-80 h-80 text-white" />
+        <div className="absolute right-[-40px] bottom-[-40px] opacity-5 pointer-events-none">
+          <Coffee className="w-80 h-80 text-cafe-copper" />
         </div>
       </div>
 

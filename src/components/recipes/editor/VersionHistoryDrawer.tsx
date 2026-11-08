@@ -34,7 +34,7 @@ export const VersionHistoryDrawer: React.FC<VersionHistoryDrawerProps> = ({
       />
 
       {/* Drawer */}
-      <div className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-cafe-surface dark:bg-cafe-darkSurface border-l border-cafe-border dark:border-cafe-darkBorder shadow-2xl flex flex-col animate-in slide-in-from-right duration-200">
+      <div className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-cafe-surface dark:bg-cafe-darkSurface border-l border-cafe-border dark:border-cafe-darkBorder shadow-xl dark:shadow-none flex flex-col animate-in slide-in-from-right duration-200">
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-cafe-border/70 dark:border-cafe-darkBorder">
           <div className="flex items-center gap-2">

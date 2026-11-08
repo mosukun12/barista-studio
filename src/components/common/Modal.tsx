@@ -54,7 +54,7 @@ export const Modal: React.FC<ModalProps> = ({
       {/* Modal Dialog Card */}
       <div
         className={cn(
-          'relative w-full bg-cafe-surface dark:bg-cafe-darkCard rounded-2xl shadow-2xl border border-cafe-border dark:border-cafe-darkBorder p-6 overflow-hidden z-10 animate-in zoom-in-95 duration-150',
+          'relative w-full bg-cafe-surface dark:bg-cafe-darkCard rounded-2xl shadow-xl dark:shadow-none border border-cafe-border dark:border-cafe-darkBorder p-6 overflow-hidden z-10 animate-in zoom-in-95 duration-150',
           maxWidths[maxWidth]
         )}
       >

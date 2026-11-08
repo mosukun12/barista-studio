@@ -40,9 +40,9 @@ export default {
         mono: ['"JetBrains Mono"', 'monospace']
       },
       boxShadow: {
-        'cafe-subtle': '0 1px 3px 0 rgba(35, 28, 24, 0.04), 0 1px 2px 0 rgba(35, 28, 24, 0.02)',
-        'cafe-card': '0 4px 12px -2px rgba(35, 28, 24, 0.06), 0 2px 6px -1px rgba(35, 28, 24, 0.03)',
-        'cafe-hover': '0 10px 25px -5px rgba(35, 28, 24, 0.08), 0 8px 10px -6px rgba(35, 28, 24, 0.04)',
+        'cafe-subtle': '0 1px 2px 0 rgba(0, 0, 0, 0.04)',
+        'cafe-card': '0 2px 6px -1px rgba(0, 0, 0, 0.05)',
+        'cafe-hover': '0 6px 14px -2px rgba(0, 0, 0, 0.07)',
       }
     },
   },

@@ -71,7 +71,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
           {showMenu && (
             <>
               <div className="fixed inset-0 z-30" onClick={() => setShowMenu(false)} />
-              <div className="absolute right-0 mt-1 w-44 bg-cafe-surface dark:bg-cafe-darkSurface rounded-xl border border-cafe-border dark:border-cafe-darkBorder shadow-xl py-1 z-40 text-xs">
+              <div className="absolute right-0 mt-1 w-44 bg-cafe-surface dark:bg-cafe-darkSurface rounded-xl border border-cafe-border dark:border-cafe-darkBorder shadow-lg dark:shadow-none py-1 z-40 text-xs">
                 <button
                   onClick={() => {
                     setShowMenu(false);

@@ -3,10 +3,31 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    color-scheme: light dark;
+  }
+
   body {
     @apply bg-cafe-bg text-cafe-text antialiased;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
+}
+
+/* Ensure crisp, solid café borders in dark mode without fuzzy white halos or inverted glow artifacts */
+.dark {
+  color-scheme: dark;
+}
+
+.dark .shadow-cafe-card,
+.dark .shadow-cafe-subtle,
+.dark .shadow-cafe-hover,
+.dark .shadow-2xl,
+.dark .shadow-xl,
+.dark .shadow-lg,
+.dark .shadow-md,
+.dark .shadow,
+.dark .shadow-sm {
+  box-shadow: none !important;
 }
 
 /* Custom scrollbar for modern café workbench look */
