@@ -1,6 +1,115 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
-import { Recipe, RecipeFilterOptions, RecipeStepItem, RecipeVersionItem } from '../types';
+import {
+  Recipe,
+  RecipeFilterOptions,
+  RecipeStepItem,
+  RecipeVersionItem,
+  RecipeIngredientItem,
+  RecipeNoteItem,
+} from '../types';
 import { localStore } from './localStore';
+
+/**
+ * Deduplicate recipe ingredients by ingredient_id or name + quantity + unit.
+ * Normalizes sort_order sequentially.
+ */
+export function deduplicateIngredients(
+  ingredients?: RecipeIngredientItem[]
+): RecipeIngredientItem[] {
+  if (!Array.isArray(ingredients)) return [];
+  const seen = new Set<string>();
+  const result: RecipeIngredientItem[] = [];
+
+  for (const ing of ingredients) {
+    if (!ing) continue;
+    const idKey = (ing.ingredient_id || '').trim().toLowerCase();
+    const nameKey = (ing.ingredient_name || '').trim().toLowerCase();
+    const qtyKey = Number(ing.quantity || 0);
+    const unitKey = (ing.unit_id || ing.unit_symbol || ing.custom_unit_symbol || '').trim().toLowerCase();
+
+    // Unique identity key: combination of identity (id or name), quantity, and unit
+    const key = `${idKey || nameKey}:${qtyKey}:${unitKey}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      result.push({ ...ing });
+    }
+  }
+
+  return result.map((item, idx) => ({ ...item, sort_order: idx + 1 }));
+}
+
+/**
+ * Deduplicate recipe steps by step_number, title, and description.
+ * Normalizes step_number sequentially.
+ */
+export function deduplicateSteps(steps?: RecipeStepItem[]): RecipeStepItem[] {
+  if (!Array.isArray(steps)) return [];
+  const seen = new Set<string>();
+  const result: RecipeStepItem[] = [];
+
+  for (const step of steps) {
+    if (!step) continue;
+    const titleKey = (step.title || '').trim().toLowerCase();
+    const descKey = (step.description || '').trim().toLowerCase();
+    const numKey = step.step_number;
+
+    const key = `${numKey}:${titleKey}:${descKey}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      result.push({ ...step });
+    }
+  }
+
+  return result.map((item, idx) => ({ ...item, step_number: idx + 1 }));
+}
+
+/**
+ * Deduplicate recipe barista notes by type, title, and content.
+ * Normalizes sort_order sequentially.
+ */
+export function deduplicateNotes(notes?: RecipeNoteItem[]): RecipeNoteItem[] {
+  if (!Array.isArray(notes)) return [];
+  const seen = new Set<string>();
+  const result: RecipeNoteItem[] = [];
+
+  for (const note of notes) {
+    if (!note) continue;
+    const typeKey = (note.note_type || '').trim().toLowerCase();
+    const titleKey = (note.title || '').trim().toLowerCase();
+    const contentKey = (note.content || '').trim().toLowerCase();
+
+    const key = `${typeKey}:${titleKey}:${contentKey}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      result.push({ ...note });
+    }
+  }
+
+  return result.map((item, idx) => ({ ...item, sort_order: idx + 1 }));
+}
+
+// Mutex lock map to prevent concurrent writes to the same recipe
+const recipeUpdateLocks = new Map<string, Promise<any>>();
+
+async function withRecipeLock<T>(recipeId: string, operation: () => Promise<T>): Promise<T> {
+  const currentLock = recipeUpdateLocks.get(recipeId) || Promise.resolve();
+  let releaseLock: () => void;
+  const newLock = new Promise<void>((resolve) => {
+    releaseLock = resolve;
+  });
+
+  recipeUpdateLocks.set(recipeId, currentLock.then(() => newLock, () => newLock));
+
+  try {
+    await currentLock;
+    return await operation();
+  } finally {
+    releaseLock!();
+    if (recipeUpdateLocks.get(recipeId) === newLock) {
+      recipeUpdateLocks.delete(recipeId);
+    }
+  }
+}
 
 function parseStep(st: any): RecipeStepItem {
   let ingredients: string[] = Array.isArray(st.ingredients) ? st.ingredients : [];
@@ -81,18 +190,24 @@ export const recipeService = {
       recipes = (data || []).map((row: any) => ({
         ...row,
         category_name: row.categories?.name,
-        ingredients: (row.recipe_ingredients || [])
-          .sort((a: any, b: any) => a.sort_order - b.sort_order)
-          .map((ing: any) => ({
-            ...ing,
-            ingredient_name: ing.ingredients?.name,
-            ingredient_brand: ing.ingredients?.brand,
-            unit_symbol: ing.measurement_units?.symbol || ing.custom_unit_symbol,
-          })),
-        steps: (row.recipe_steps || [])
-          .sort((a: any, b: any) => a.step_number - b.step_number)
-          .map(parseStep),
-        notes: (row.recipe_notes || []).sort((a: any, b: any) => a.sort_order - b.sort_order),
+        ingredients: deduplicateIngredients(
+          (row.recipe_ingredients || [])
+            .sort((a: any, b: any) => a.sort_order - b.sort_order)
+            .map((ing: any) => ({
+              ...ing,
+              ingredient_name: ing.ingredients?.name,
+              ingredient_brand: ing.ingredients?.brand,
+              unit_symbol: ing.measurement_units?.symbol || ing.custom_unit_symbol,
+            }))
+        ),
+        steps: deduplicateSteps(
+          (row.recipe_steps || [])
+            .sort((a: any, b: any) => a.step_number - b.step_number)
+            .map(parseStep)
+        ),
+        notes: deduplicateNotes(
+          (row.recipe_notes || []).sort((a: any, b: any) => a.sort_order - b.sort_order)
+        ),
       }));
     } else {
       recipes = localStore.getRecipes();
@@ -167,27 +282,44 @@ export const recipeService = {
       return {
         ...row,
         category_name: row.categories?.name,
-        ingredients: (row.recipe_ingredients || [])
-          .sort((a: any, b: any) => a.sort_order - b.sort_order)
-          .map((ing: any) => ({
-            ...ing,
-            ingredient_name: ing.ingredients?.name,
-            ingredient_brand: ing.ingredients?.brand,
-            unit_symbol: ing.measurement_units?.symbol || ing.custom_unit_symbol,
-          })),
-        steps: (row.recipe_steps || [])
-          .sort((a: any, b: any) => a.step_number - b.step_number)
-          .map(parseStep),
-        notes: (row.recipe_notes || []).sort((a: any, b: any) => a.sort_order - b.sort_order),
+        ingredients: deduplicateIngredients(
+          (row.recipe_ingredients || [])
+            .sort((a: any, b: any) => a.sort_order - b.sort_order)
+            .map((ing: any) => ({
+              ...ing,
+              ingredient_name: ing.ingredients?.name,
+              ingredient_brand: ing.ingredients?.brand,
+              unit_symbol: ing.measurement_units?.symbol || ing.custom_unit_symbol,
+            }))
+        ),
+        steps: deduplicateSteps(
+          (row.recipe_steps || [])
+            .sort((a: any, b: any) => a.step_number - b.step_number)
+            .map(parseStep)
+        ),
+        notes: deduplicateNotes(
+          (row.recipe_notes || []).sort((a: any, b: any) => a.sort_order - b.sort_order)
+        ),
       };
     }
 
     const items = localStore.getRecipes();
-    return items.find((r) => r.id === id) || null;
+    const found = items.find((r) => r.id === id);
+    if (!found) return null;
+    return {
+      ...found,
+      ingredients: deduplicateIngredients(found.ingredients),
+      steps: deduplicateSteps(found.steps),
+      notes: deduplicateNotes(found.notes),
+    };
   },
 
   async createRecipe(recipe: Partial<Recipe>): Promise<Recipe> {
     const now = new Date().toISOString();
+    const cleanIngredients = deduplicateIngredients(recipe.ingredients);
+    const cleanSteps = deduplicateSteps(recipe.steps);
+    const cleanNotes = deduplicateNotes(recipe.notes);
+
     const newRecipe: Recipe = {
       id: crypto.randomUUID(),
       user_id: 'default_user',
@@ -210,9 +342,9 @@ export const recipeService = {
       tags: recipe.tags || [],
       created_at: now,
       updated_at: now,
-      ingredients: recipe.ingredients || [],
-      steps: recipe.steps || [],
-      notes: recipe.notes || [],
+      ingredients: cleanIngredients,
+      steps: cleanSteps,
+      notes: cleanNotes,
     };
 
     if (isSupabaseConfigured && supabase) {
@@ -248,8 +380,8 @@ export const recipeService = {
       if (recipeError) throw new Error(recipeError.message);
 
       // 2. Insert ingredients if any
-      if (newRecipe.ingredients && newRecipe.ingredients.length > 0) {
-        const ingRows = newRecipe.ingredients.map((ing, idx) => ({
+      if (cleanIngredients.length > 0) {
+        const ingRows = cleanIngredients.map((ing, idx) => ({
           recipe_id: newRecipe.id,
           ingredient_id: ing.ingredient_id,
           quantity: ing.quantity,
@@ -258,12 +390,13 @@ export const recipeService = {
           sort_order: idx + 1,
           note: ing.note || null,
         }));
-        await client.from('recipe_ingredients').insert(ingRows);
+        const { error: ingError } = await client.from('recipe_ingredients').insert(ingRows);
+        if (ingError) throw new Error(`บันทึกส่วนผสมเริ่มต้นไม่สำเร็จ: ${ingError.message}`);
       }
 
       // 3. Insert steps if any
-      if (newRecipe.steps && newRecipe.steps.length > 0) {
-        const stepRows = newRecipe.steps.map((st, idx) => {
+      if (cleanSteps.length > 0) {
+        const stepRows = cleanSteps.map((st, idx) => {
           let additional_note = st.additional_note || null;
           if (st.ingredients && st.ingredients.length > 0) {
             additional_note = JSON.stringify({
@@ -282,19 +415,21 @@ export const recipeService = {
             additional_note,
           };
         });
-        await client.from('recipe_steps').insert(stepRows);
+        const { error: stepError } = await client.from('recipe_steps').insert(stepRows);
+        if (stepError) throw new Error(`บันทึกขั้นตอนเริ่มต้นไม่สำเร็จ: ${stepError.message}`);
       }
 
       // 4. Insert notes if any
-      if (newRecipe.notes && newRecipe.notes.length > 0) {
-        const noteRows = newRecipe.notes.map((nt, idx) => ({
+      if (cleanNotes.length > 0) {
+        const noteRows = cleanNotes.map((nt, idx) => ({
           recipe_id: newRecipe.id,
           note_type: nt.note_type,
           title: nt.title || null,
           content: nt.content,
           sort_order: idx + 1,
         }));
-        await client.from('recipe_notes').insert(noteRows);
+        const { error: noteError } = await client.from('recipe_notes').insert(noteRows);
+        if (noteError) throw new Error(`บันทึกโน้ตเริ่มต้นไม่สำเร็จ: ${noteError.message}`);
       }
 
       // 5. Create initial version snapshot
@@ -314,122 +449,169 @@ export const recipeService = {
   },
 
   async updateRecipe(id: string, updates: Partial<Recipe>, changeSummary?: string): Promise<Recipe> {
-    const now = new Date().toISOString();
+    return withRecipeLock(id, async () => {
+      const now = new Date().toISOString();
 
-    if (isSupabaseConfigured && supabase) {
-      const client = supabase as any;
-      // 1. Update parent recipe
-      const { error: updateError } = await client
-        .from('recipes')
-        .update({
-          name_th: updates.name_th,
-          name_en: updates.name_en,
-          description: updates.description,
-          cover_image_url: updates.cover_image_url,
-          category_id: updates.category_id,
-          drink_type: updates.drink_type,
-          glass_size: updates.glass_size,
-          glass_type: updates.glass_type,
-          lid_type: updates.lid_type,
-          straw_type: updates.straw_type,
-          serving_notes: updates.serving_notes,
-          status: updates.status,
-          difficulty: updates.difficulty,
-          prep_time_seconds: updates.prep_time_seconds,
-          is_archived: updates.is_archived,
-          tags: updates.tags,
-          updated_at: now,
-        })
-        .eq('id', id);
+      if (isSupabaseConfigured && supabase) {
+        const client = supabase as any;
+        // 1. Update parent recipe
+        const { error: updateError } = await client
+          .from('recipes')
+          .update({
+            name_th: updates.name_th,
+            name_en: updates.name_en,
+            description: updates.description,
+            cover_image_url: updates.cover_image_url,
+            category_id: updates.category_id,
+            drink_type: updates.drink_type,
+            glass_size: updates.glass_size,
+            glass_type: updates.glass_type,
+            lid_type: updates.lid_type,
+            straw_type: updates.straw_type,
+            serving_notes: updates.serving_notes,
+            status: updates.status,
+            difficulty: updates.difficulty,
+            prep_time_seconds: updates.prep_time_seconds,
+            is_archived: updates.is_archived,
+            tags: updates.tags,
+            updated_at: now,
+          })
+          .eq('id', id);
 
-      if (updateError) throw new Error(updateError.message);
+        if (updateError) throw new Error(`อัปเดตข้อมูลสูตรหลักไม่สำเร็จ: ${updateError.message}`);
 
-      // 2. Refresh ingredients
-      if (updates.ingredients !== undefined) {
-        await client.from('recipe_ingredients').delete().eq('recipe_id', id);
-        if (updates.ingredients.length > 0) {
-          const ingRows = updates.ingredients.map((ing, idx) => ({
-            recipe_id: id,
-            ingredient_id: ing.ingredient_id,
-            quantity: ing.quantity,
-            unit_id: ing.unit_id || null,
-            custom_unit_symbol: ing.custom_unit_symbol || null,
-            sort_order: idx + 1,
-            note: ing.note || null,
-          }));
-          await client.from('recipe_ingredients').insert(ingRows);
-        }
-      }
+        // 2. Refresh ingredients with deduplication and error check
+        if (updates.ingredients !== undefined) {
+          const cleanIngs = deduplicateIngredients(updates.ingredients);
+          const { error: delIngError } = await client
+            .from('recipe_ingredients')
+            .delete()
+            .eq('recipe_id', id);
 
-      // 3. Refresh steps
-      if (updates.steps !== undefined) {
-        await client.from('recipe_steps').delete().eq('recipe_id', id);
-        if (updates.steps.length > 0) {
-          const stepRows = updates.steps.map((st, idx) => {
-            let additional_note = st.additional_note || null;
-            if (st.ingredients && st.ingredients.length > 0) {
-              additional_note = JSON.stringify({
-                ingredients: st.ingredients,
-                note: st.additional_note || '',
-              });
-            }
-            return {
+          if (delIngError) {
+            console.error('Error deleting recipe ingredients:', delIngError);
+            throw new Error(`ลบส่วนผสมเดิมไม่สำเร็จ: ${delIngError.message}`);
+          }
+
+          if (cleanIngs.length > 0) {
+            const ingRows = cleanIngs.map((ing, idx) => ({
               recipe_id: id,
-              step_number: idx + 1,
-              title: st.title,
-              description: st.description || null,
-              duration_seconds: st.duration_seconds || 0,
-              equipment: st.equipment || null,
-              image_url: st.image_url || null,
-              additional_note,
-            };
-          });
-          await client.from('recipe_steps').insert(stepRows);
+              ingredient_id: ing.ingredient_id,
+              quantity: ing.quantity,
+              unit_id: ing.unit_id || null,
+              custom_unit_symbol: ing.custom_unit_symbol || null,
+              sort_order: idx + 1,
+              note: ing.note || null,
+            }));
+            const { error: insIngError } = await client.from('recipe_ingredients').insert(ingRows);
+            if (insIngError) {
+              console.error('Error inserting recipe ingredients:', insIngError);
+              throw new Error(`บันทึกส่วนผสมใหม่ไม่สำเร็จ: ${insIngError.message}`);
+            }
+          }
         }
+
+        // 3. Refresh steps with deduplication and error check
+        if (updates.steps !== undefined) {
+          const cleanSteps = deduplicateSteps(updates.steps);
+          const { error: delStepError } = await client
+            .from('recipe_steps')
+            .delete()
+            .eq('recipe_id', id);
+
+          if (delStepError) {
+            console.error('Error deleting recipe steps:', delStepError);
+            throw new Error(`ลบขั้นตอนเดิมไม่สำเร็จ: ${delStepError.message}`);
+          }
+
+          if (cleanSteps.length > 0) {
+            const stepRows = cleanSteps.map((st, idx) => {
+              let additional_note = st.additional_note || null;
+              if (st.ingredients && st.ingredients.length > 0) {
+                additional_note = JSON.stringify({
+                  ingredients: st.ingredients,
+                  note: st.additional_note || '',
+                });
+              }
+              return {
+                recipe_id: id,
+                step_number: idx + 1,
+                title: st.title,
+                description: st.description || null,
+                duration_seconds: st.duration_seconds || 0,
+                equipment: st.equipment || null,
+                image_url: st.image_url || null,
+                additional_note,
+              };
+            });
+            const { error: insStepError } = await client.from('recipe_steps').insert(stepRows);
+            if (insStepError) {
+              console.error('Error inserting recipe steps:', insStepError);
+              throw new Error(`บันทึกขั้นตอนใหม่ไม่สำเร็จ: ${insStepError.message}`);
+            }
+          }
+        }
+
+        // 4. Refresh notes with deduplication and error check
+        if (updates.notes !== undefined) {
+          const cleanNotes = deduplicateNotes(updates.notes);
+          const { error: delNoteError } = await client
+            .from('recipe_notes')
+            .delete()
+            .eq('recipe_id', id);
+
+          if (delNoteError) {
+            console.error('Error deleting recipe notes:', delNoteError);
+            throw new Error(`ลบโน้ตเดิมไม่สำเร็จ: ${delNoteError.message}`);
+          }
+
+          if (cleanNotes.length > 0) {
+            const noteRows = cleanNotes.map((nt, idx) => ({
+              recipe_id: id,
+              note_type: nt.note_type,
+              title: nt.title || null,
+              content: nt.content,
+              sort_order: idx + 1,
+            }));
+            const { error: insNoteError } = await client.from('recipe_notes').insert(noteRows);
+            if (insNoteError) {
+              console.error('Error inserting recipe notes:', insNoteError);
+              throw new Error(`บันทึกโน้ตใหม่ไม่สำเร็จ: ${insNoteError.message}`);
+            }
+          }
+        }
+
+        const updated = await this.getRecipeById(id);
+        if (!updated) throw new Error('ไม่พบข้อมูลสูตรหลังบันทึก');
+
+        if (changeSummary) {
+          await this.saveVersionSnapshot(id, changeSummary, undefined, updated);
+        }
+
+        return updated;
       }
 
-      // 4. Refresh notes
-      if (updates.notes !== undefined) {
-        await client.from('recipe_notes').delete().eq('recipe_id', id);
-        if (updates.notes.length > 0) {
-          const noteRows = updates.notes.map((nt, idx) => ({
-            recipe_id: id,
-            note_type: nt.note_type,
-            title: nt.title || null,
-            content: nt.content,
-            sort_order: idx + 1,
-          }));
-          await client.from('recipe_notes').insert(noteRows);
-        }
-      }
+      const current = localStore.getRecipes();
+      const index = current.findIndex((r) => r.id === id);
+      if (index === -1) throw new Error('ไม่พบสูตรที่ต้องการแก้ไข');
 
-      const updated = await this.getRecipeById(id);
-      if (!updated) throw new Error('ไม่พบข้อมูลสูตรหลังบันทึก');
+      const updatedRecipe: Recipe = {
+        ...current[index],
+        ...updates,
+        ingredients: updates.ingredients ? deduplicateIngredients(updates.ingredients) : current[index].ingredients,
+        steps: updates.steps ? deduplicateSteps(updates.steps) : current[index].steps,
+        notes: updates.notes ? deduplicateNotes(updates.notes) : current[index].notes,
+        updated_at: now,
+      };
+      current[index] = updatedRecipe;
+      localStore.saveRecipes(current);
 
       if (changeSummary) {
-        await this.saveVersionSnapshot(id, changeSummary, undefined, updated);
+        await this.saveVersionSnapshot(id, changeSummary, undefined, updatedRecipe);
       }
 
-      return updated;
-    }
-
-    const current = localStore.getRecipes();
-    const index = current.findIndex((r) => r.id === id);
-    if (index === -1) throw new Error('ไม่พบสูตรที่ต้องการแก้ไข');
-
-    const updatedRecipe: Recipe = {
-      ...current[index],
-      ...updates,
-      updated_at: now,
-    };
-    current[index] = updatedRecipe;
-    localStore.saveRecipes(current);
-
-    if (changeSummary) {
-      await this.saveVersionSnapshot(id, changeSummary, undefined, updatedRecipe);
-    }
-
-    return updatedRecipe;
+      return updatedRecipe;
+    });
   },
 
   async deleteRecipe(id: string): Promise<void> {
@@ -448,15 +630,19 @@ export const recipeService = {
     const original = await this.getRecipeById(id);
     if (!original) throw new Error('ไม่พบสูตรต้นแบบที่จะทำสำเนา');
 
+    const cleanIngredients = deduplicateIngredients(original.ingredients || []);
+    const cleanSteps = deduplicateSteps(original.steps || []);
+    const cleanNotes = deduplicateNotes(original.notes || []);
+
     const clone: Partial<Recipe> = {
       ...original,
       name_th: `${original.name_th} (สำเนา)`,
       name_en: original.name_en ? `${original.name_en} (Copy)` : null,
       status: 'draft', // Clones start as draft
       is_archived: false,
-      ingredients: (original.ingredients || []).map((ing) => ({ ...ing, id: undefined })),
-      steps: (original.steps || []).map((st) => ({ ...st, id: undefined })),
-      notes: (original.notes || []).map((nt) => ({ ...nt, id: undefined })),
+      ingredients: cleanIngredients.map((ing) => ({ ...ing, id: undefined, recipe_id: undefined })),
+      steps: cleanSteps.map((st) => ({ ...st, id: undefined, recipe_id: undefined })),
+      notes: cleanNotes.map((nt) => ({ ...nt, id: undefined, recipe_id: undefined })),
     };
 
     return this.createRecipe(clone);
@@ -500,9 +686,9 @@ export const recipeService = {
           prep_time_seconds: fullRecipe.prep_time_seconds,
           tags: fullRecipe.tags,
         },
-        ingredients: fullRecipe.ingredients || [],
-        steps: fullRecipe.steps || [],
-        notes: fullRecipe.notes || [],
+        ingredients: deduplicateIngredients(fullRecipe.ingredients || []),
+        steps: deduplicateSteps(fullRecipe.steps || []),
+        notes: deduplicateNotes(fullRecipe.notes || []),
       },
       created_at: new Date().toISOString(),
     };
@@ -557,9 +743,9 @@ export const recipeService = {
     const { snapshot } = target;
     const restoredRecipeUpdates: Partial<Recipe> = {
       ...snapshot.recipe,
-      ingredients: snapshot.ingredients,
-      steps: snapshot.steps,
-      notes: snapshot.notes,
+      ingredients: deduplicateIngredients(snapshot.ingredients),
+      steps: deduplicateSteps(snapshot.steps),
+      notes: deduplicateNotes(snapshot.notes),
     };
 
     // Creating a brand-new forward version on restore, preserving all history!

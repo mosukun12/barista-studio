@@ -11,7 +11,12 @@ import { VariationsSection } from './VariationsSection';
 import { VersionHistoryDrawer } from './VersionHistoryDrawer';
 import { AutosaveBadge, AutosaveStatus } from '../../common/AutosaveBadge';
 import { Button } from '../../common/Button';
-import { recipeService } from '../../../services/recipeService';
+import {
+  recipeService,
+  deduplicateIngredients,
+  deduplicateSteps,
+  deduplicateNotes,
+} from '../../../services/recipeService';
 import { ingredientService } from '../../../services/ingredientService';
 
 interface RecipeEditorProps {
@@ -22,9 +27,16 @@ interface RecipeEditorProps {
 export const RecipeEditor: React.FC<RecipeEditorProps> = ({ initialRecipe, isNew = false }) => {
   const navigate = useNavigate();
 
-  // Recipe master state
+  // Recipe master state with deduplication applied upfront
   const [recipe, setRecipe] = useState<Partial<Recipe>>(() => {
-    if (initialRecipe) return initialRecipe;
+    if (initialRecipe) {
+      return {
+        ...initialRecipe,
+        ingredients: deduplicateIngredients(initialRecipe.ingredients || []),
+        steps: deduplicateSteps(initialRecipe.steps || []),
+        notes: deduplicateNotes(initialRecipe.notes || []),
+      };
+    }
     return {
       name_th: '',
       name_en: '',
@@ -62,6 +74,8 @@ export const RecipeEditor: React.FC<RecipeEditorProps> = ({ initialRecipe, isNew
   const [versions, setVersions] = useState<RecipeVersionItem[]>([]);
   const [isDirty, setIsDirty] = useState(false);
 
+  // Concurrency guard & timer references
+  const isSavingRef = useRef(false);
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const currentRecipeRef = useRef(recipe);
   currentRecipeRef.current = recipe;
@@ -112,7 +126,11 @@ export const RecipeEditor: React.FC<RecipeEditorProps> = ({ initialRecipe, isNew
       setAutosaveStatus('saving');
 
       debounceTimerRef.current = setTimeout(async () => {
+        // Prevent collision if manual save or another save is currently active
+        if (isSavingRef.current) return;
+
         try {
+          isSavingRef.current = true;
           await recipeService.updateRecipe(initialRecipe.id, {
             ...currentRecipeRef.current,
             ...updates,
@@ -124,20 +142,31 @@ export const RecipeEditor: React.FC<RecipeEditorProps> = ({ initialRecipe, isNew
           console.error('Autosave failed:', err);
           setAutosaveStatus('error');
           setErrorMessage(err.message || 'เกิดข้อผิดพลาดในการบันทึกอัตโนมัติ');
+        } finally {
+          isSavingRef.current = false;
         }
-      }, 1500);
+      }, 2000);
     }
   };
 
   // Manual save
   const handleSaveManual = async () => {
+    if (isSavingRef.current || isSavingManual) return;
+
     if (!recipe.name_th?.trim()) {
       alert('กรุณาระบุชื่อเครื่องดื่ม (ภาษาไทย)');
       return;
     }
 
+    // Cancel pending autosave immediately so it does not collide
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+
     try {
       setIsSavingManual(true);
+      isSavingRef.current = true;
       setErrorMessage(null);
 
       if (isNew) {
@@ -163,6 +192,7 @@ export const RecipeEditor: React.FC<RecipeEditorProps> = ({ initialRecipe, isNew
       alert(`บันทึกล้มเหลว: ${err.message}`);
     } finally {
       setIsSavingManual(false);
+      isSavingRef.current = false;
     }
   };
 

@@ -130,7 +130,7 @@ export const SettingsPage: React.FC = () => {
       const [recipes, ingredients, cats, uns] = await Promise.all([
         recipeService.getRecipes({ showArchived: true }),
         ingredientService.getIngredients(),
-        ingredientService.getCategories('recipe'),
+        ingredientService.getCategories('all'),
         ingredientService.getUnits(),
       ]);
 

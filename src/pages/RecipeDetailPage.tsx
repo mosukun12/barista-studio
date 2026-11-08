@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Edit3,
@@ -18,7 +18,12 @@ import {
   Beaker,
 } from 'lucide-react';
 import { Recipe, RecipeVersionItem } from '../types';
-import { recipeService } from '../services/recipeService';
+import {
+  recipeService,
+  deduplicateIngredients,
+  deduplicateSteps,
+  deduplicateNotes,
+} from '../services/recipeService';
 import { StatusBadge } from '../components/common/Badge';
 import { Button } from '../components/common/Button';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
@@ -35,6 +40,20 @@ export const RecipeDetailPage: React.FC = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [versions, setVersions] = useState<RecipeVersionItem[]>([]);
+
+  // Sanitized & Deduplicated collections for robust UI display
+  const displayIngredients = useMemo(
+    () => (recipe?.ingredients ? deduplicateIngredients(recipe.ingredients) : []),
+    [recipe?.ingredients]
+  );
+  const displaySteps = useMemo(
+    () => (recipe?.steps ? deduplicateSteps(recipe.steps) : []),
+    [recipe?.steps]
+  );
+  const displayNotes = useMemo(
+    () => (recipe?.notes ? deduplicateNotes(recipe.notes) : []),
+    [recipe?.notes]
+  );
 
   const loadRecipe = async () => {
     if (!id) return;
@@ -298,9 +317,9 @@ export const RecipeDetailPage: React.FC = () => {
               ส่วนผสมและสัดส่วน (Ingredients)
             </h2>
 
-            {recipe.ingredients && recipe.ingredients.length > 0 ? (
+            {displayIngredients.length > 0 ? (
               <div className="divide-y divide-cafe-border/60 dark:divide-cafe-darkBorder">
-                {recipe.ingredients.map((ing, idx) => (
+                {displayIngredients.map((ing, idx) => (
                   <div key={idx} className="py-3 flex items-center justify-between gap-3 text-sm">
                     <div>
                       <div className="font-semibold text-cafe-text dark:text-cafe-cream">
@@ -365,9 +384,9 @@ export const RecipeDetailPage: React.FC = () => {
               ขั้นตอนการทำ (Preparation Steps)
             </h2>
 
-            {recipe.steps && recipe.steps.length > 0 ? (
+            {displaySteps.length > 0 ? (
               <div className="space-y-4">
-                {recipe.steps.map((step, idx) => (
+                {displaySteps.map((step, idx) => (
                   <div
                     key={idx}
                     className="p-4 rounded-xl bg-cafe-cream/40 dark:bg-cafe-darkSurface/60 border border-cafe-border/60 dark:border-cafe-darkBorder space-y-2.5"
@@ -440,7 +459,7 @@ export const RecipeDetailPage: React.FC = () => {
           </div>
 
           {/* Notes & Barista Tips */}
-          {recipe.notes && recipe.notes.length > 0 && (
+          {displayNotes.length > 0 && (
             <div className="bg-cafe-surface dark:bg-cafe-darkCard rounded-2xl border border-cafe-border dark:border-cafe-darkBorder p-5 sm:p-6 shadow-cafe-subtle space-y-3">
               <h2 className="text-base font-bold text-cafe-text dark:text-cafe-cream flex items-center gap-2">
                 <BookOpen className="w-5 h-5 text-cafe-copper" />
@@ -448,7 +467,7 @@ export const RecipeDetailPage: React.FC = () => {
               </h2>
 
               <div className="space-y-3">
-                {recipe.notes.map((n, idx) => {
+                {displayNotes.map((n, idx) => {
                   const config = NOTE_TYPE_CONFIG[n.note_type] || NOTE_TYPE_CONFIG.tip;
                   return (
                     <div
