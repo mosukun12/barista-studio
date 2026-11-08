@@ -9,6 +9,7 @@ import { RecipesPage } from './pages/RecipesPage';
 import { RecipeDetailPage } from './pages/RecipeDetailPage';
 import { RecipeEditPage } from './pages/RecipeEditPage';
 import { IngredientsPage } from './pages/IngredientsPage';
+import { CategoriesPage } from './pages/CategoriesPage';
 import { TrainingPage } from './pages/TrainingPage';
 import { PracticePage } from './pages/PracticePage';
 import { SimulatorPage } from './pages/SimulatorPage';
@@ -38,6 +39,7 @@ export const App: React.FC = () => {
                 <Route path="recipes/:id" element={<RecipeDetailPage />} />
                 <Route path="recipes/:id/edit" element={<RecipeEditPage />} />
                 <Route path="ingredients" element={<IngredientsPage />} />
+                <Route path="categories" element={<CategoriesPage />} />
                 <Route path="training" element={<TrainingPage />} />
                 <Route path="practice" element={<PracticePage />} />
                 <Route path="simulator" element={<SimulatorPage />} />

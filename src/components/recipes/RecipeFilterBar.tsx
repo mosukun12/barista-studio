@@ -1,5 +1,6 @@
 import React from 'react';
-import { Search, LayoutGrid, List, SlidersHorizontal, Archive } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Search, LayoutGrid, List, SlidersHorizontal, Archive, FolderTree } from 'lucide-react';
 import { RecipeFilterOptions, Category } from '../../types';
 import { DRINK_TYPE_CONFIG, STATUS_CONFIG } from '../../lib/utils';
 
@@ -71,19 +72,28 @@ export const RecipeFilterBar: React.FC<RecipeFilterBarProps> = ({
 
       {/* Filter selectors row */}
       <div className="flex flex-wrap items-center gap-2.5">
-        {/* Category filter */}
-        <select
-          value={filters.category}
-          onChange={(e) => onFilterChange({ category: e.target.value })}
-          className="text-xs py-2 px-3 rounded-xl bg-cafe-surface dark:bg-cafe-darkCard border border-cafe-border dark:border-cafe-darkBorder text-cafe-text dark:text-cafe-cream focus:outline-none focus:ring-2 focus:ring-cafe-copper"
-        >
-          <option value="all">ทุกหมวดหมู่ (All Categories)</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
+        {/* Category filter + quick manage button */}
+        <div className="flex items-center gap-1.5">
+          <select
+            value={filters.category}
+            onChange={(e) => onFilterChange({ category: e.target.value })}
+            className="text-xs py-2 px-3 rounded-xl bg-cafe-surface dark:bg-cafe-darkCard border border-cafe-border dark:border-cafe-darkBorder text-cafe-text dark:text-cafe-cream focus:outline-none focus:ring-2 focus:ring-cafe-copper"
+          >
+            <option value="all">ทุกหมวดหมู่ (All Categories)</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+          <Link
+            to="/categories"
+            title="จัดการหมวดหมู่สูตรและวัตถุดิบ (Categories)"
+            className="p-2 rounded-xl bg-cafe-surface dark:bg-cafe-darkCard border border-cafe-border dark:border-cafe-darkBorder text-cafe-muted hover:text-cafe-copper hover:border-cafe-copper transition-colors"
+          >
+            <FolderTree className="w-3.5 h-3.5" />
+          </Link>
+        </div>
 
         {/* Status filter */}
         <select

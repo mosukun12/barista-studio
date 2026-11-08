@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Search, Wheat, Edit3, Trash2, AlertCircle, CheckCircle2, X } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Plus, Search, Wheat, Edit3, Trash2, AlertCircle, CheckCircle2, X, FolderTree } from 'lucide-react';
 import { Ingredient, Category, MeasurementUnit } from '../types';
 import { ingredientService } from '../services/ingredientService';
 import { Button } from '../components/common/Button';
@@ -161,18 +162,28 @@ export const IngredientsPage: React.FC = () => {
           />
         </div>
 
-        <select
-          value={selectedCategory}
-          onChange={(e) => setSelectedCategory(e.target.value)}
-          className="text-xs py-2.5 px-3 rounded-xl bg-cafe-surface dark:bg-cafe-darkCard border border-cafe-border dark:border-cafe-darkBorder text-cafe-text dark:text-cafe-cream focus:outline-none focus:ring-2 focus:ring-cafe-copper"
-        >
-          <option value="all">ทุกหมวดหมู่วัตถุดิบ</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
+        <div className="flex items-center gap-1.5">
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="text-xs py-2.5 px-3 rounded-xl bg-cafe-surface dark:bg-cafe-darkCard border border-cafe-border dark:border-cafe-darkBorder text-cafe-text dark:text-cafe-cream focus:outline-none focus:ring-2 focus:ring-cafe-copper"
+          >
+            <option value="all">ทุกหมวดหมู่วัตถุดิบ</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+
+          <Link
+            to="/categories"
+            title="จัดการหมวดหมู่วัตถุดิบและสูตร (Manage Categories)"
+            className="p-2.5 rounded-xl bg-cafe-surface dark:bg-cafe-darkCard border border-cafe-border dark:border-cafe-darkBorder text-cafe-muted hover:text-cafe-copper hover:border-cafe-copper transition-colors"
+          >
+            <FolderTree className="w-4 h-4" />
+          </Link>
+        </div>
       </div>
 
       {/* Content Table or Empty */}

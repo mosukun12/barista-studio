@@ -8,6 +8,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/recipes': 'Recipe Book (คลังสูตร)',
   '/recipes/new': 'สร้างสูตรเครื่องดื่มใหม่',
   '/ingredients': 'คลังวัตถุดิบ (Ingredients)',
+  '/categories': 'จัดการหมวดหมู่ (Categories)',
   '/training': 'คู่มือและเทคนิคการทำงาน (Training Guide)',
   '/practice': 'ระบบฝึกจำสูตร (Practice Mode)',
   '/simulator': 'บาริสต้าจำลองสถานการณ์ (Barista Simulator)',

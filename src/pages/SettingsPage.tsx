@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Settings,
   Download,
@@ -14,6 +15,7 @@ import {
   Scale,
   FolderTree,
   Sliders,
+  ExternalLink,
 } from 'lucide-react';
 import { Button } from '../components/common/Button';
 import { Modal } from '../components/common/Modal';
@@ -48,7 +50,7 @@ export const SettingsPage: React.FC = () => {
   const loadSettingsData = async () => {
     try {
       const [cats, uns] = await Promise.all([
-        ingredientService.getCategories('recipe'),
+        ingredientService.getCategories('all'),
         ingredientService.getUnits(),
       ]);
       setCategories(cats);
@@ -349,24 +351,33 @@ export const SettingsPage: React.FC = () => {
       {/* Tab: Categories Management */}
       {activeTab === 'categories' && (
         <div className="space-y-4 bg-cafe-surface dark:bg-cafe-darkCard p-6 rounded-2xl border border-cafe-border dark:border-cafe-darkBorder shadow-cafe-subtle">
-          <div className="flex items-center justify-between pb-3 border-b border-cafe-border dark:border-cafe-darkBorder">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-cafe-border dark:border-cafe-darkBorder">
             <div>
               <h2 className="font-bold text-base text-cafe-text dark:text-cafe-cream">
-                จัดการหมวดหมู่สูตรเครื่องดื่ม (Recipe Categories)
+                จัดการหมวดหมู่สูตรและวัตถุดิบ (Categories)
               </h2>
               <p className="text-xs text-cafe-muted">
-                คุณสามารถเพิ่ม แก้ไข หรือลบหมวดหมู่ได้เองโดยไม่ต้องแก้ Source Code
+                คุณสามารถเพิ่ม แก้ไข หรือลบหมวดหมู่สูตรเครื่องดื่มและหมวดหมู่วัตถุดิบได้เอง
               </p>
             </div>
 
-            <Button
-              variant="primary"
-              size="sm"
-              icon={<Plus className="w-4 h-4" />}
-              onClick={() => setIsAddingCategory(true)}
-            >
-              เพิ่มหมวดหมู่ใหม่
-            </Button>
+            <div className="flex items-center gap-2">
+              <Link
+                to="/categories"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-cafe-cream dark:bg-cafe-darkSurface text-cafe-copper hover:bg-cafe-copper hover:text-white border border-cafe-copper/30 transition-colors shadow-xs"
+              >
+                <span>เปิดหน้าระบบเต็ม</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </Link>
+              <Button
+                variant="primary"
+                size="sm"
+                icon={<Plus className="w-4 h-4" />}
+                onClick={() => setIsAddingCategory(true)}
+              >
+                เพิ่มหมวดหมู่ใหม่
+              </Button>
+            </div>
           </div>
 
           {/* Form Add Inline */}
@@ -408,9 +419,18 @@ export const SettingsPage: React.FC = () => {
           <div className="divide-y divide-cafe-border/60 dark:divide-cafe-darkBorder">
             {categories.map((c) => (
               <div key={c.id} className="py-3 flex items-center justify-between gap-3 text-sm">
-                <div>
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-semibold text-cafe-text dark:text-cafe-cream">{c.name}</span>
-                  <span className="text-xs text-cafe-muted font-mono ml-2">slug: {c.slug}</span>
+                  <span
+                    className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                      c.category_type === 'ingredient'
+                        ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300'
+                        : 'bg-cafe-copper/10 text-cafe-copper dark:bg-cafe-copper/20 dark:text-cafe-cream'
+                    }`}
+                  >
+                    {c.category_type === 'ingredient' ? 'วัตถุดิบ (Ingredient)' : 'สูตร (Recipe)'}
+                  </span>
+                  <span className="text-xs text-cafe-muted font-mono">slug: {c.slug}</span>
                 </div>
                 <button
                   onClick={() => handleDeleteCategory(c.id, c.name)}

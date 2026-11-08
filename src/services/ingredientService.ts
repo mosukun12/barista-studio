@@ -182,21 +182,25 @@ export const ingredientService = {
     localStore.saveIngredients(filtered);
   },
 
-  async getCategories(type: 'recipe' | 'ingredient' | 'guide' = 'recipe'): Promise<Category[]> {
+  async getCategories(type: 'recipe' | 'ingredient' | 'guide' | 'all' = 'recipe'): Promise<Category[]> {
     if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .eq('category_type', type)
-        .order('sort_order', { ascending: true });
+      let query = supabase.from('categories').select('*').order('sort_order', { ascending: true });
+      if (type !== 'all') {
+        query = query.eq('category_type', type);
+      }
+      const { data, error } = await query;
 
       if (error) {
         console.error('Error fetching categories:', error);
-        return localStore.getCategories().filter((c) => c.category_type === type);
+        return type !== 'all'
+          ? localStore.getCategories().filter((c) => c.category_type === type)
+          : localStore.getCategories();
       }
       return data as Category[];
     }
-    return localStore.getCategories().filter((c) => c.category_type === type);
+    return type !== 'all'
+      ? localStore.getCategories().filter((c) => c.category_type === type)
+      : localStore.getCategories();
   },
 
   async createCategory(cat: Partial<Category>): Promise<Category> {
