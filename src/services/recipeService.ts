@@ -6,8 +6,10 @@ import {
   RecipeVersionItem,
   RecipeIngredientItem,
   RecipeNoteItem,
+  Ingredient,
 } from '../types';
 import { localStore } from './localStore';
+import { ingredientService } from './ingredientService';
 
 /**
  * Deduplicate recipe ingredients by ingredient_id or name + quantity + unit.
@@ -86,6 +88,98 @@ export function deduplicateNotes(notes?: RecipeNoteItem[]): RecipeNoteItem[] {
   }
 
   return result.map((item, idx) => ({ ...item, sort_order: idx + 1 }));
+}
+
+/**
+ * Automatically sync any new or unpersisted ingredients to the ingredients inventory.
+ * If an ingredient is marked as is_new_ingredient or has a temporary id or does not exist in inventory,
+ * it creates the ingredient in the inventory and assigns the generated ID.
+ */
+export async function syncNewIngredientsToInventory(
+  ingredients: RecipeIngredientItem[]
+): Promise<{ ingredients: RecipeIngredientItem[]; newIngredientNames: string[] }> {
+  if (!Array.isArray(ingredients) || ingredients.length === 0) {
+    return { ingredients: [], newIngredientNames: [] };
+  }
+
+  let existingInventory: Ingredient[] = [];
+  try {
+    existingInventory = await ingredientService.getIngredients();
+  } catch (err) {
+    console.warn('Could not fetch existing ingredients inventory for sync:', err);
+  }
+
+  const existingMapById = new Map<string, Ingredient>();
+  const existingMapByName = new Map<string, Ingredient>();
+  for (const item of existingInventory) {
+    if (item.id) existingMapById.set(item.id, item);
+    if (item.name) existingMapByName.set(item.name.trim().toLowerCase(), item);
+  }
+
+  const updatedIngredients: RecipeIngredientItem[] = [];
+  const newlyCreatedNames: string[] = [];
+
+  for (const ing of ingredients) {
+    if (!ing) continue;
+    const clone: RecipeIngredientItem = { ...ing };
+    const id = (clone.ingredient_id || '').trim();
+    const name = (clone.ingredient_name || '').trim();
+
+    const isTempId = !id || id.startsWith('temp_') || id.startsWith('new_') || id === '__NEW__';
+    const isExplicitNew = Boolean(clone.is_new_ingredient);
+    const notInInventory = Boolean(id && !existingMapById.has(id));
+
+    if (isTempId || isExplicitNew || notInInventory) {
+      if (!name) {
+        if (id && existingMapById.has(id)) {
+          clone.ingredient_name = existingMapById.get(id)!.name;
+          clone.is_new_ingredient = false;
+          updatedIngredients.push(clone);
+          continue;
+        }
+        updatedIngredients.push(clone);
+        continue;
+      }
+
+      // Check if ingredient with this exact name already exists in inventory
+      const existingMatch = existingMapByName.get(name.toLowerCase());
+      if (existingMatch) {
+        clone.ingredient_id = existingMatch.id;
+        clone.ingredient_name = existingMatch.name;
+        clone.ingredient_brand = existingMatch.brand || clone.ingredient_brand;
+        clone.is_new_ingredient = false;
+        updatedIngredients.push(clone);
+      } else {
+        try {
+          const created = await ingredientService.createIngredient({
+            name,
+            brand: clone.ingredient_brand || null,
+            default_unit_id: clone.unit_id || null,
+          });
+
+          clone.ingredient_id = created.id;
+          clone.ingredient_name = created.name;
+          clone.is_new_ingredient = false;
+          newlyCreatedNames.push(created.name);
+
+          // Update cache for any duplicate rows in same recipe
+          existingMapById.set(created.id, created);
+          existingMapByName.set(created.name.trim().toLowerCase(), created);
+        } catch (createErr) {
+          console.error(`Failed to auto-create ingredient "${name}" in inventory:`, createErr);
+        }
+        updatedIngredients.push(clone);
+      }
+    } else {
+      clone.is_new_ingredient = false;
+      updatedIngredients.push(clone);
+    }
+  }
+
+  return {
+    ingredients: updatedIngredients,
+    newIngredientNames: newlyCreatedNames,
+  };
 }
 
 // Mutex lock map to prevent concurrent writes to the same recipe
@@ -316,7 +410,8 @@ export const recipeService = {
 
   async createRecipe(recipe: Partial<Recipe>): Promise<Recipe> {
     const now = new Date().toISOString();
-    const cleanIngredients = deduplicateIngredients(recipe.ingredients);
+    const { ingredients: syncedIngredients } = await syncNewIngredientsToInventory(recipe.ingredients || []);
+    const cleanIngredients = deduplicateIngredients(syncedIngredients);
     const cleanSteps = deduplicateSteps(recipe.steps);
     const cleanNotes = deduplicateNotes(recipe.notes);
 
@@ -482,7 +577,8 @@ export const recipeService = {
 
         // 2. Refresh ingredients with deduplication and error check
         if (updates.ingredients !== undefined) {
-          const cleanIngs = deduplicateIngredients(updates.ingredients);
+          const { ingredients: syncedIngs } = await syncNewIngredientsToInventory(updates.ingredients);
+          const cleanIngs = deduplicateIngredients(syncedIngs);
           const { error: delIngError } = await client
             .from('recipe_ingredients')
             .delete()
@@ -595,10 +691,16 @@ export const recipeService = {
       const index = current.findIndex((r) => r.id === id);
       if (index === -1) throw new Error('ไม่พบสูตรที่ต้องการแก้ไข');
 
+      let cleanIngs = current[index].ingredients;
+      if (updates.ingredients !== undefined) {
+        const { ingredients: synced } = await syncNewIngredientsToInventory(updates.ingredients);
+        cleanIngs = deduplicateIngredients(synced);
+      }
+
       const updatedRecipe: Recipe = {
         ...current[index],
         ...updates,
-        ingredients: updates.ingredients ? deduplicateIngredients(updates.ingredients) : current[index].ingredients,
+        ingredients: cleanIngs,
         steps: updates.steps ? deduplicateSteps(updates.steps) : current[index].steps,
         notes: updates.notes ? deduplicateNotes(updates.notes) : current[index].notes,
         updated_at: now,
@@ -755,4 +857,6 @@ export const recipeService = {
       `กู้คืนข้อมูลจาก Version ${versionNumber}`
     );
   },
+
+  syncNewIngredientsToInventory,
 };

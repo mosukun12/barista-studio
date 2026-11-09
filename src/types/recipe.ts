@@ -53,6 +53,7 @@ export interface RecipeIngredientItem {
   ingredient_name?: string;
   ingredient_brand?: string;
   unit_symbol?: string;
+  is_new_ingredient?: boolean;
 }
 
 export interface RecipeStepItem {

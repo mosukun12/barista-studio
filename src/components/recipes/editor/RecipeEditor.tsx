@@ -16,6 +16,7 @@ import {
   deduplicateIngredients,
   deduplicateSteps,
   deduplicateNotes,
+  syncNewIngredientsToInventory,
 } from '../../../services/recipeService';
 import { ingredientService } from '../../../services/ingredientService';
 
@@ -131,9 +132,18 @@ export const RecipeEditor: React.FC<RecipeEditorProps> = ({ initialRecipe, isNew
 
         try {
           isSavingRef.current = true;
+          // Sync any new ingredients to inventory before autosaving
+          const { ingredients: syncedIngredients, newIngredientNames } =
+            await syncNewIngredientsToInventory(currentRecipeRef.current.ingredients || []);
+
+          if (newIngredientNames.length > 0) {
+            await loadRegistries();
+          }
+
           await recipeService.updateRecipe(initialRecipe.id, {
             ...currentRecipeRef.current,
             ...updates,
+            ingredients: syncedIngredients,
           });
           setAutosaveStatus('saved');
           setLastSavedAt(new Date());
@@ -158,6 +168,14 @@ export const RecipeEditor: React.FC<RecipeEditorProps> = ({ initialRecipe, isNew
       return;
     }
 
+    const hasUnnamedNewIngredient = (recipe.ingredients || []).some(
+      (ing) => (ing.is_new_ingredient || ing.ingredient_id?.startsWith('temp_')) && !ing.ingredient_name?.trim()
+    );
+    if (hasUnnamedNewIngredient) {
+      alert('กรุณากรอกชื่อวัตถุดิบใหม่ในรายการส่วนผสมให้ครบถ้วน หรือลบแถวที่ไม่ได้ระบุชื่อออกก่อนบันทึกสูตร');
+      return;
+    }
+
     // Cancel pending autosave immediately so it does not collide
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
@@ -169,15 +187,29 @@ export const RecipeEditor: React.FC<RecipeEditorProps> = ({ initialRecipe, isNew
       isSavingRef.current = true;
       setErrorMessage(null);
 
+      // 1. Sync any new ingredients to the ingredients inventory first!
+      const { ingredients: syncedIngredients, newIngredientNames } =
+        await syncNewIngredientsToInventory(recipe.ingredients || []);
+
+      const recipeToSave: Partial<Recipe> = {
+        ...recipe,
+        ingredients: syncedIngredients,
+      };
+
       if (isNew) {
-        const created = await recipeService.createRecipe(recipe);
+        const created = await recipeService.createRecipe(recipeToSave);
         setIsDirty(false);
+        await loadRegistries();
+
+        if (newIngredientNames.length > 0) {
+          alert(`บันทึกสูตรใหม่สำเร็จ!\n✨ เพิ่มวัตถุดิบใหม่เข้าสู่คลังวัตถุดิบเรียบร้อยแล้ว: ${newIngredientNames.join(', ')}`);
+        }
         navigate(`/recipes/${created.id}`);
       } else if (initialRecipe?.id) {
         const changeSummary = prompt('ระบุสรุปการเปลี่ยนแปลงสำหรับบันทึก Version History:', 'อัปเดตสูตรและอัตราส่วน');
         const updated = await recipeService.updateRecipe(
           initialRecipe.id,
-          recipe,
+          recipeToSave,
           changeSummary || 'อัปเดตสูตร'
         );
         setRecipe(updated);
@@ -185,7 +217,13 @@ export const RecipeEditor: React.FC<RecipeEditorProps> = ({ initialRecipe, isNew
         setAutosaveStatus('saved');
         setLastSavedAt(new Date());
         loadVersions(initialRecipe.id);
-        alert('บันทึกสูตรและสร้าง Version ใหม่เรียบร้อยแล้ว');
+        await loadRegistries();
+
+        let successMsg = 'บันทึกสูตรและสร้าง Version ใหม่เรียบร้อยแล้ว';
+        if (newIngredientNames.length > 0) {
+          successMsg += `\n✨ เพิ่มวัตถุดิบใหม่เข้าสู่คลังวัตถุดิบเรียบร้อยแล้ว: ${newIngredientNames.join(', ')}`;
+        }
+        alert(successMsg);
       }
     } catch (err: any) {
       console.error('Save error:', err);
