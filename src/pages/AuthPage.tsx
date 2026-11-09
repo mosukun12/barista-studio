@@ -53,11 +53,11 @@ export const AuthPage: React.FC = () => {
       if (msg.includes('User already registered') || msg.includes('already registered')) {
         setErrorMsg('อีเมลนี้ถูกลงทะเบียนไปแล้ว! กรุณาสลับไปที่แท็บ "เข้าสู่ระบบ" ด้านบน หรือลองใช้อีเมลใหม่');
       } else if (msg.includes('Database error') || msg.includes('error saving new user')) {
-        setErrorMsg('เกิดข้อผิดพลาดจากฐานข้อมูล Supabase (Database Error): กรุณารันคำสั่ง SQL สร้างตารางใน SQL Editor ให้เสร็จสิ้นก่อน');
+        setErrorMsg('เกิดข้อผิดพลาดในการเชื่อมต่อระบบ กรุณาลองใหม่อีกครั้ง');
       } else if (msg.includes('Password should be')) {
         setErrorMsg('รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร');
       } else if (msg.includes('Email not confirmed')) {
-        setErrorMsg('อีเมลนี้ยังไม่ได้กดยืนยัน กรุณาเช็คกล่องจดหมาย หรือไปปิด Confirm email ใน Supabase');
+        setErrorMsg('อีเมลนี้ยังไม่ได้กดยืนยัน กรุณาตรวจสอบกล่องจดหมายในอีเมลของคุณ');
       } else if (msg.includes('Invalid login credentials')) {
         setErrorMsg('อีเมลหรือรหัสผ่านไม่ถูกต้อง');
       } else {
@@ -198,18 +198,18 @@ export const AuthPage: React.FC = () => {
           </Button>
         </form>
 
-        {/* Database Status Info */}
+        {/* System Status Info */}
         <div className="pt-4 border-t border-cafe-border/70 dark:border-cafe-darkBorder text-center">
           <div className="inline-flex items-center gap-1.5 text-[11px] text-cafe-muted">
             {isSupabaseConnected ? (
               <>
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Supabase Auth Cloud Active</span>
+                <span>ระบบบัญชีออนไลน์เชื่อมต่อแล้ว (Cloud Sync)</span>
               </>
             ) : (
               <>
                 <HardDrive className="w-3.5 h-3.5 text-amber-600" />
-                <span>โหมดทดลองในเครื่อง (Local Mode)</span>
+                <span>โหมดใช้งานส่วนบุคคล (Local Mode)</span>
               </>
             )}
           </div>

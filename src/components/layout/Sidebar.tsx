@@ -110,22 +110,22 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 <>
                   <CloudCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                   <span className="text-xs font-semibold text-emerald-800 dark:text-emerald-300">
-                    Supabase Cloud
+                    ระบบ Cloud ซิงก์
                   </span>
                 </>
               ) : (
                 <>
-                  <HardDrive className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                  <span className="text-xs font-semibold text-amber-800 dark:text-amber-300">
-                    Local Storage Mode
+                  <HardDrive className="w-4 h-4 text-cafe-copper" />
+                  <span className="text-xs font-semibold text-cafe-text dark:text-cafe-cream">
+                    Local Storage
                   </span>
                 </>
               )}
             </div>
             <p className="text-[11px] text-cafe-muted leading-tight">
               {isSupabaseConnected
-                ? 'ระบบเชื่อมต่อฐานข้อมูลและ RLS ถาวรแล้ว'
-                : 'ทำงานแบบ Local Workbench (ใส่คีย์ใน Settings หรือ .env เพื่อซิงก์ Cloud)'}
+                ? 'จัดเก็บและสำรองข้อมูลบน Cloud อัตโนมัติ'
+                : 'บันทึกข้อมูลปลอดภัยบนเบราว์เซอร์ส่วนตัว'}
             </p>
           </div>
         </div>

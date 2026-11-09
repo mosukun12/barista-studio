@@ -4,7 +4,6 @@ import {
   Settings,
   Download,
   Upload,
-  Database,
   Moon,
   Sun,
   ShieldCheck,
@@ -16,11 +15,12 @@ import {
   FolderTree,
   Sliders,
   ExternalLink,
+  Coffee,
+  Info,
 } from 'lucide-react';
 import { Button } from '../components/common/Button';
 import { Modal } from '../components/common/Modal';
 import { useTheme } from '../context/ThemeContext';
-import { useAuth } from '../context/AuthContext';
 import { recipeService } from '../services/recipeService';
 import { ingredientService } from '../services/ingredientService';
 import { localStore } from '../services/localStore';
@@ -28,7 +28,6 @@ import { Category, MeasurementUnit } from '../types';
 
 export const SettingsPage: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
-  const { isSupabaseConnected } = useAuth();
 
   const [activeTab, setActiveTab] = useState<'general' | 'categories' | 'units' | 'backup'>('general');
 
@@ -203,7 +202,7 @@ export const SettingsPage: React.FC = () => {
           การตั้งค่าและจัดการข้อมูล (Settings & Workspace)
         </h1>
         <p className="text-xs sm:text-sm text-cafe-muted mt-0.5">
-          จัดการหมวดหมู่สูตร หน่วยวัดเฉพาะทาง สำรองข้อมูล และการเชื่อมต่อระบบ
+          จัดการหมวดหมู่สูตร หน่วยวัดเฉพาะทาง สำรองข้อมูล และปรับแต่งการแสดงผล
         </p>
       </div>
 
@@ -217,7 +216,7 @@ export const SettingsPage: React.FC = () => {
               : 'border-transparent text-cafe-muted hover:text-cafe-text'
           }`}
         >
-          <Sliders className="w-4 h-4" /> ทั่วไป & ฐานข้อมูล
+          <Sliders className="w-4 h-4" /> ทั่วไป & ธีม
         </button>
 
         <button
@@ -254,64 +253,9 @@ export const SettingsPage: React.FC = () => {
         </button>
       </div>
 
-      {/* Tab: General & Database */}
+      {/* Tab: General & Theme */}
       {activeTab === 'general' && (
         <div className="space-y-6">
-          {/* Cloud Database Status */}
-          <div className="p-6 rounded-2xl bg-cafe-surface dark:bg-cafe-darkCard border border-cafe-border dark:border-cafe-darkBorder space-y-4 shadow-cafe-subtle">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <div
-                  className={`p-2.5 rounded-xl ${
-                    isSupabaseConnected
-                      ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40'
-                      : 'bg-amber-100 text-amber-600 dark:bg-amber-950/40'
-                  }`}
-                >
-                  <Database className="w-5 h-5" />
-                </div>
-                <div>
-                  <h2 className="font-bold text-base text-cafe-text dark:text-cafe-cream">
-                    สถานะการเชื่อมต่อ Supabase Cloud Database
-                  </h2>
-                  <p className="text-xs text-cafe-muted">
-                    PostgreSQL Database พร้อมระบบ Row Level Security (RLS)
-                  </p>
-                </div>
-              </div>
-
-              <span
-                className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                  isSupabaseConnected
-                    ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200'
-                    : 'bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-200'
-                }`}
-              >
-                {isSupabaseConnected ? 'เชื่อมต่อแล้ว (Connected)' : 'Local Storage Mode'}
-              </span>
-            </div>
-
-            <div className="p-4 rounded-xl bg-cafe-cream/60 dark:bg-cafe-darkSurface/60 border border-cafe-border/60 dark:border-cafe-darkBorder text-xs text-cafe-muted space-y-2">
-              {isSupabaseConnected ? (
-                <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 font-medium">
-                  <CheckCircle2 className="w-4 h-4" />
-                  สูตรเครื่องดื่ม วัตถุดิบ และรูปภาพของคุณได้รับการจัดเก็บและสำรองบน Supabase Cloud แบบถาวร
-                </div>
-              ) : (
-                <div className="space-y-1.5">
-                  <div className="font-semibold text-cafe-text dark:text-cafe-cream">
-                    วิธีเปิดใช้งาน Supabase Cloud Sync:
-                  </div>
-                  <ol className="list-decimal pl-4 space-y-1">
-                    <li>เปิดไฟล์ <code className="bg-white/80 dark:bg-black/40 px-1 py-0.5 rounded font-mono">.env</code> ในโฟลเดอร์โปรเจกต์</li>
-                    <li>ใส่ <code className="bg-white/80 dark:bg-black/40 px-1 py-0.5 rounded font-mono">VITE_SUPABASE_URL</code> และ <code className="bg-white/80 dark:bg-black/40 px-1 py-0.5 rounded font-mono">VITE_SUPABASE_ANON_KEY</code></li>
-                    <li>นำ Script ใน <code className="bg-white/80 dark:bg-black/40 px-1 py-0.5 rounded font-mono">supabase/migrations/001_initial_schema.sql</code> ไป Run ใน Supabase SQL Editor</li>
-                  </ol>
-                </div>
-              )}
-            </div>
-          </div>
-
           {/* Theme */}
           <div className="p-6 rounded-2xl bg-cafe-surface dark:bg-cafe-darkCard border border-cafe-border dark:border-cafe-darkBorder space-y-4 shadow-cafe-subtle">
             <div>
@@ -343,6 +287,39 @@ export const SettingsPage: React.FC = () => {
               <Button variant="secondary" size="sm" onClick={toggleTheme}>
                 สลับธีม ({theme === 'dark' ? 'Light' : 'Dark'})
               </Button>
+            </div>
+          </div>
+
+          {/* About App */}
+          <div className="p-6 rounded-2xl bg-cafe-surface dark:bg-cafe-darkCard border border-cafe-border dark:border-cafe-darkBorder space-y-3 shadow-cafe-subtle">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-cafe-copper/10 text-cafe-copper">
+                <Coffee className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="font-bold text-base text-cafe-text dark:text-cafe-cream">
+                  เกี่ยวกับ Barista Studio
+                </h2>
+                <p className="text-xs text-cafe-muted">
+                  Personal Barista Recipe Management & Training Workbench
+                </p>
+              </div>
+            </div>
+            <div className="p-4 rounded-xl bg-cafe-cream/40 dark:bg-cafe-darkSurface/40 border border-cafe-border/60 dark:border-cafe-darkBorder text-xs text-cafe-muted space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span>เวอร์ชันระบบ:</span>
+                <span className="font-mono font-semibold text-cafe-copper">v1.0.0 (Production)</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>สภาพแวดล้อม:</span>
+                <span className="font-medium text-cafe-text dark:text-cafe-cream">เว็บแอปพลิเคชันสำหรับบาริสต้ามืออาชีพ</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>ระบบรักษาความปลอดภัย:</span>
+                <span className="font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                  <ShieldCheck className="w-3.5 h-3.5" /> Client Sandbox Security Active
+                </span>
+              </div>
             </div>
           </div>
         </div>
