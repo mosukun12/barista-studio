@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
-import { Plus, Search, Wheat, Edit3, Trash2, AlertCircle, CheckCircle2, X, FolderTree } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Plus, Search, Wheat, Edit3, Trash2, AlertCircle, CheckCircle2, X, FolderTree, TableProperties } from 'lucide-react';
 import { Ingredient, Category, MeasurementUnit } from '../types';
 import { ingredientService } from '../services/ingredientService';
 import { Button } from '../components/common/Button';
@@ -10,6 +10,7 @@ import { EmptyState } from '../components/common/EmptyState';
 import { STANDARD_UNITS } from '../lib/units';
 
 export const IngredientsPage: React.FC = () => {
+  const navigate = useNavigate();
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [units, setUnits] = useState<MeasurementUnit[]>([]);
@@ -139,14 +140,24 @@ export const IngredientsPage: React.FC = () => {
           </p>
         </div>
 
-        <Button
-          variant="primary"
-          size="md"
-          icon={<Plus className="w-4 h-4" />}
-          onClick={handleOpenNew}
-        >
-          เพิ่มวัตถุดิบใหม่
-        </Button>
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <Button
+            variant="secondary"
+            size="md"
+            icon={<TableProperties className="w-4 h-4 text-cafe-copper" />}
+            onClick={() => navigate('/batch?tab=ingredients')}
+          >
+            จัดการแบบชุด (Batch Editor)
+          </Button>
+          <Button
+            variant="primary"
+            size="md"
+            icon={<Plus className="w-4 h-4" />}
+            onClick={handleOpenNew}
+          >
+            เพิ่มวัตถุดิบใหม่
+          </Button>
+        </div>
       </div>
 
       {/* Filter and Search Bar */}

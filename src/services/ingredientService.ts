@@ -237,14 +237,16 @@ export const ingredientService = {
 
   async updateCategory(id: string, updates: Partial<Category>): Promise<Category> {
     if (isSupabaseConfigured && supabase) {
+      const payload: any = {
+        name: updates.name,
+        description: updates.description,
+        icon: updates.icon,
+        sort_order: updates.sort_order,
+      };
+      if (updates.category_type) payload.category_type = updates.category_type;
       const { data, error } = await (supabase as any)
         .from('categories')
-        .update({
-          name: updates.name,
-          description: updates.description,
-          icon: updates.icon,
-          sort_order: updates.sort_order,
-        })
+        .update(payload)
         .eq('id', id)
         .select()
         .single();
@@ -330,5 +332,47 @@ export const ingredientService = {
 
     const all = localStore.getUnits().filter((u) => u.id !== id);
     localStore.saveUnits(all);
+  },
+
+  async batchSaveIngredients(params: {
+    creates: Partial<Ingredient>[];
+    updates: { id: string; data: Partial<Ingredient> }[];
+    deletes: string[];
+  }): Promise<{ created: number; updated: number; deleted: number }> {
+    for (const item of params.creates) {
+      await this.createIngredient(item);
+    }
+    for (const item of params.updates) {
+      await this.updateIngredient(item.id, item.data);
+    }
+    for (const id of params.deletes) {
+      await this.deleteIngredient(id, true);
+    }
+    return {
+      created: params.creates.length,
+      updated: params.updates.length,
+      deleted: params.deletes.length,
+    };
+  },
+
+  async batchSaveCategories(params: {
+    creates: Partial<Category>[];
+    updates: { id: string; data: Partial<Category> }[];
+    deletes: string[];
+  }): Promise<{ created: number; updated: number; deleted: number }> {
+    for (const item of params.creates) {
+      await this.createCategory(item);
+    }
+    for (const item of params.updates) {
+      await this.updateCategory(item.id, item.data);
+    }
+    for (const id of params.deletes) {
+      await this.deleteCategory(id);
+    }
+    return {
+      created: params.creates.length,
+      updated: params.updates.length,
+      deleted: params.deletes.length,
+    };
   },
 };

@@ -858,5 +858,26 @@ export const recipeService = {
     );
   },
 
+  async batchSaveRecipes(params: {
+    creates: Partial<Recipe>[];
+    updates: { id: string; data: Partial<Recipe> }[];
+    deletes: string[];
+  }): Promise<{ created: number; updated: number; deleted: number }> {
+    for (const item of params.creates) {
+      await this.createRecipe(item);
+    }
+    for (const item of params.updates) {
+      await this.updateRecipe(item.id, item.data, 'อัปเดตข้อมูลแบบชุด (Batch Editor)');
+    }
+    for (const id of params.deletes) {
+      await this.deleteRecipe(id);
+    }
+    return {
+      created: params.creates.length,
+      updated: params.updates.length,
+      deleted: params.deletes.length,
+    };
+  },
+
   syncNewIngredientsToInventory,
 };

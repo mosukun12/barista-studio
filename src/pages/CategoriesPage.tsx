@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   FolderTree,
   Plus,
@@ -12,6 +13,7 @@ import {
   CheckCircle2,
   X,
   SlidersHorizontal,
+  TableProperties,
 } from 'lucide-react';
 import { Category } from '../types';
 import { ingredientService } from '../services/ingredientService';
@@ -20,6 +22,7 @@ import { EmptyState } from '../components/common/EmptyState';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
 
 export const CategoriesPage: React.FC = () => {
+  const navigate = useNavigate();
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filterType, setFilterType] = useState<'all' | 'recipe' | 'ingredient'>('all');
@@ -167,14 +170,24 @@ export const CategoriesPage: React.FC = () => {
           </div>
         </div>
 
-        <Button
-          variant="primary"
-          size="md"
-          icon={<Plus className="w-4 h-4" />}
-          onClick={() => handleOpenAdd(filterType !== 'all' ? filterType : 'recipe')}
-        >
-          เพิ่มหมวดหมู่ใหม่
-        </Button>
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <Button
+            variant="secondary"
+            size="md"
+            icon={<TableProperties className="w-4 h-4 text-cafe-copper" />}
+            onClick={() => navigate('/batch?tab=categories')}
+          >
+            จัดการแบบชุด (Batch Editor)
+          </Button>
+          <Button
+            variant="primary"
+            size="md"
+            icon={<Plus className="w-4 h-4" />}
+            onClick={() => handleOpenAdd(filterType !== 'all' ? filterType : 'recipe')}
+          >
+            เพิ่มหมวดหมู่ใหม่
+          </Button>
+        </div>
       </div>
 
       {/* Summary Stats Cards */}

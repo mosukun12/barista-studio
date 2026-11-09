@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Coffee, Sparkles } from 'lucide-react';
+import { Plus, Coffee, Sparkles, TableProperties } from 'lucide-react';
 import { Recipe, RecipeFilterOptions, Category } from '../types';
 import { recipeService } from '../services/recipeService';
 import { ingredientService } from '../services/ingredientService';
@@ -133,14 +133,24 @@ export const RecipesPage: React.FC = () => {
           </p>
         </div>
 
-        <Button
-          variant="primary"
-          size="md"
-          icon={<Plus className="w-4 h-4" />}
-          onClick={() => navigate('/recipes/new')}
-        >
-          สร้างสูตรเครื่องดื่มใหม่
-        </Button>
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <Button
+            variant="secondary"
+            size="md"
+            icon={<TableProperties className="w-4 h-4 text-cafe-copper" />}
+            onClick={() => navigate('/batch?tab=recipes')}
+          >
+            จัดการแบบชุด (Batch Editor)
+          </Button>
+          <Button
+            variant="primary"
+            size="md"
+            icon={<Plus className="w-4 h-4" />}
+            onClick={() => navigate('/recipes/new')}
+          >
+            สร้างสูตรเครื่องดื่มใหม่
+          </Button>
+        </div>
       </div>
 
       {/* Filter and search toolbar */}
