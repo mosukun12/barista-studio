@@ -48,6 +48,7 @@ export const SimulatorPage: React.FC = () => {
 
   // Active Simulation Session
   const [currentOrder, setCurrentOrder] = useState<Recipe | null>(null);
+  const [orderTicketNumber, setOrderTicketNumber] = useState<number>(() => Math.floor(100 + Math.random() * 900));
   const [selectedCupSize, setSelectedCupSize] = useState<string>('16 oz');
   const [selectedDrinkType, setSelectedDrinkType] = useState<string>('iced');
 
@@ -99,6 +100,7 @@ export const SimulatorPage: React.FC = () => {
     const randomIdx = Math.floor(Math.random() * verifiedRecipes.length);
     const order = verifiedRecipes[randomIdx];
     setCurrentOrder(order);
+    setOrderTicketNumber(Math.floor(100 + Math.random() * 900));
     setSelectedCupSize('16 oz');
     setSelectedDrinkType(order.drink_type || 'iced');
     setAssembledItems([]);
@@ -303,7 +305,7 @@ export const SimulatorPage: React.FC = () => {
           {/* Order Ticket */}
           <div className="p-5 sm:p-6 rounded-2xl bg-gradient-to-r from-amber-50/80 via-cafe-cream to-amber-50/80 dark:from-cafe-darkSurface dark:to-cafe-darkCard border-2 border-dashed border-cafe-copper/50 relative overflow-hidden font-mono shadow-cafe-subtle">
             <div className="flex items-center justify-between text-xs text-cafe-muted uppercase tracking-wider mb-1">
-              <span>[ ORDER TICKET #CAFÉ-{Math.floor(100 + Math.random() * 900)} ]</span>
+              <span>[ ORDER TICKET #CAFÉ-{orderTicketNumber} ]</span>
               <button
                 onClick={handleStartOrder}
                 className="text-xs font-sans text-cafe-copper hover:underline flex items-center gap-1 font-semibold"

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Target,
@@ -120,9 +120,9 @@ export const PracticePage: React.FC = () => {
 
   const currentRecipe = verifiedRecipes[currentQuestionIndex];
 
-  // Dynamic question generation from verified recipe
-  const generateQuestion = () => {
-    if (!currentRecipe) return null;
+  // Dynamic question generation from verified recipe (stable across timer updates via useMemo)
+  const questionData = useMemo(() => {
+    if (!quizActive || !currentRecipe) return null;
     const correctIngredient = currentRecipe.ingredients?.[0];
     if (!correctIngredient) return null;
 
@@ -141,9 +141,7 @@ export const PracticePage: React.FC = () => {
       options,
       correctAnswer: correctText,
     };
-  };
-
-  const questionData = quizActive ? generateQuestion() : null;
+  }, [quizActive, currentQuestionIndex, currentRecipe]);
 
   const handleSelectOption = (option: string) => {
     if (userSelectedOption !== null) return;
