@@ -263,8 +263,8 @@ export const RecipeEditor: React.FC<RecipeEditorProps> = ({ initialRecipe, isNew
   return (
     <div className="space-y-6 pb-20">
       {/* Sticky Action Toolbar */}
-      <div className="sticky top-16 z-20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-cafe-surface/90 dark:bg-cafe-darkSurface/90 backdrop-blur-md rounded-2xl border border-cafe-border dark:border-cafe-darkBorder shadow-cafe-card">
-        <div className="flex items-center gap-3">
+      <div className="sticky top-16 z-20 flex items-center justify-between gap-3 p-3 sm:p-4 bg-cafe-surface/95 dark:bg-cafe-darkSurface/95 backdrop-blur-md rounded-2xl border border-cafe-border dark:border-cafe-darkBorder shadow-cafe-card">
+        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
           <button
             type="button"
             onClick={() => {
@@ -273,13 +273,14 @@ export const RecipeEditor: React.FC<RecipeEditorProps> = ({ initialRecipe, isNew
               }
               navigate(initialRecipe?.id ? `/recipes/${initialRecipe.id}` : '/recipes');
             }}
-            className="p-2 text-cafe-muted hover:text-cafe-text rounded-xl hover:bg-cafe-cream dark:hover:bg-cafe-darkCard transition-colors"
+            className="p-2 text-cafe-muted hover:text-cafe-text rounded-xl hover:bg-cafe-cream dark:hover:bg-cafe-darkCard transition-colors flex-shrink-0"
+            title="ย้อนกลับ"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <div>
-            <h1 className="font-bold text-base sm:text-lg text-cafe-text dark:text-cafe-cream">
-              {isNew ? 'สร้างสูตรเครื่องดื่มใหม่' : `แก้ไขสูตร: ${recipe.name_th || 'ไม่มีชื่อ'}`}
+          <div className="min-w-0">
+            <h1 className="font-bold text-sm sm:text-lg text-cafe-text dark:text-cafe-cream truncate">
+              {isNew ? 'สร้างสูตรใหม่' : `แก้ไขสูตร: ${recipe.name_th || 'ไม่มีชื่อ'}`}
             </h1>
             <div className="flex items-center gap-2 mt-0.5">
               <AutosaveBadge
@@ -288,15 +289,15 @@ export const RecipeEditor: React.FC<RecipeEditorProps> = ({ initialRecipe, isNew
                 errorMessage={errorMessage}
               />
               {isDirty && autosaveStatus === 'idle' && (
-                <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">
-                  • มีการเปลี่ยนแปลงที่ยังไม่ได้บันทึก
+                <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium truncate hidden sm:inline">
+                  • มีการเปลี่ยนแปลง
                 </span>
               )}
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 self-end sm:self-auto">
+        <div className="flex items-center gap-2 flex-shrink-0">
           {!isNew && initialRecipe?.id && (
             <Button
               type="button"
@@ -304,6 +305,7 @@ export const RecipeEditor: React.FC<RecipeEditorProps> = ({ initialRecipe, isNew
               size="sm"
               icon={<History className="w-4 h-4 text-cafe-copper" />}
               onClick={() => setIsHistoryOpen(true)}
+              className="hidden sm:inline-flex"
             >
               ประวัติ (v{recipe.current_version || 1})
             </Button>
@@ -317,7 +319,8 @@ export const RecipeEditor: React.FC<RecipeEditorProps> = ({ initialRecipe, isNew
             isLoading={isSavingManual}
             onClick={handleSaveManual}
           >
-            {isNew ? 'บันทึกสูตรใหม่' : 'บันทึกสูตร (Save Version)'}
+            <span className="hidden sm:inline">{isNew ? 'บันทึกสูตรใหม่' : 'บันทึกสูตร (Save Version)'}</span>
+            <span className="inline sm:hidden">บันทึก</span>
           </Button>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Plus, Trash2, ArrowUp, ArrowDown, Clock, Wrench, Image as ImageIcon, Sparkles, X, Beaker, Check } from 'lucide-react';
 import { RecipeStepItem, RecipeIngredientItem } from '../../../types';
 import { Button } from '../../common/Button';
@@ -11,9 +11,44 @@ interface StepsSectionProps {
 }
 
 export const StepsSection: React.FC<StepsSectionProps> = ({ steps, onChange, availableIngredients = [] }) => {
+  const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
+  const stepRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (highlightTimeoutRef.current) {
+        clearTimeout(highlightTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const triggerNewStepAnimation = (newIndex: number) => {
+    setHighlightedIndex(newIndex);
+    if (highlightTimeoutRef.current) {
+      clearTimeout(highlightTimeoutRef.current);
+    }
+
+    setTimeout(() => {
+      const element = stepRefs.current[newIndex];
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const input = element.querySelector<HTMLInputElement>('input[type="text"]');
+        if (input) {
+          input.focus();
+        }
+      }
+    }, 70);
+
+    highlightTimeoutRef.current = setTimeout(() => {
+      setHighlightedIndex(null);
+    }, 2000);
+  };
+
   const handleAddStep = () => {
+    const newIndex = steps.length;
     const newStep: RecipeStepItem = {
-      step_number: steps.length + 1,
+      step_number: newIndex + 1,
       title: '',
       description: '',
       duration_seconds: 0,
@@ -23,6 +58,7 @@ export const StepsSection: React.FC<StepsSectionProps> = ({ steps, onChange, ava
       ingredients: [],
     };
     onChange([...steps, newStep]);
+    triggerNewStepAnimation(newIndex);
   };
 
   const handleRemoveStep = (index: number) => {
@@ -95,12 +131,13 @@ export const StepsSection: React.FC<StepsSectionProps> = ({ steps, onChange, ava
 
   return (
     <section className="bg-cafe-surface dark:bg-cafe-darkCard rounded-2xl border border-cafe-border dark:border-cafe-darkBorder p-5 sm:p-6 shadow-cafe-subtle space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-cafe-border/60 dark:border-cafe-darkBorder">
+      {/* Sticky Section Header */}
+      <div className="sticky top-[134px] sm:top-[140px] z-10 -mx-5 sm:-mx-6 -mt-5 sm:-mt-6 p-4 sm:p-5 bg-cafe-surface/95 dark:bg-cafe-darkCard/95 backdrop-blur-md rounded-t-2xl border-b border-cafe-border/80 dark:border-cafe-darkBorder flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs transition-all">
         <div>
           <h2 className="text-base font-bold text-cafe-text dark:text-cafe-cream">
             Section D: ขั้นตอนการทำ (Preparation Steps)
           </h2>
-          <p className="text-xs text-cafe-muted">
+          <p className="text-xs text-cafe-muted mt-0.5">
             ลำดับขั้นตอนการชง เวลาที่ใช้ อุปกรณ์ และรูปภาพประกอบแต่ละขั้น
           </p>
         </div>
@@ -131,12 +168,19 @@ export const StepsSection: React.FC<StepsSectionProps> = ({ steps, onChange, ava
         </div>
       ) : (
         <div className="space-y-4">
-          {steps.map((step, index) => (
-            <div
-              key={index}
-              className="p-4 rounded-2xl bg-cafe-cream/40 dark:bg-cafe-darkSurface/50 border border-cafe-border dark:border-cafe-darkBorder space-y-3"
-            >
-              {/* Top step control bar */}
+          {steps.map((step, index) => {
+            const isHighlighted = highlightedIndex === index;
+            return (
+              <div
+                key={index}
+                ref={(el) => (stepRefs.current[index] = el)}
+                className={`p-4 rounded-2xl border space-y-3 transition-all duration-500 ${
+                  isHighlighted
+                    ? 'ring-2 ring-cafe-copper border-cafe-copper bg-amber-100/90 dark:bg-amber-950/70 shadow-lg scale-[1.005]'
+                    : 'bg-cafe-cream/40 dark:bg-cafe-darkSurface/50 border-cafe-border dark:border-cafe-darkBorder'
+                }`}
+              >
+                {/* Top step control bar */}
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <span className="w-7 h-7 rounded-xl bg-cafe-copper text-white font-bold text-xs flex items-center justify-center font-mono">
@@ -313,7 +357,8 @@ export const StepsSection: React.FC<StepsSectionProps> = ({ steps, onChange, ava
                 )}
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </section>

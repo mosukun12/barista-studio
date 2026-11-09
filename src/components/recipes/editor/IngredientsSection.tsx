@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Plus, Trash2, ArrowUp, ArrowDown, Scale, Sparkles, RotateCcw, BookmarkPlus, Check, X } from 'lucide-react';
 import { RecipeIngredientItem, Ingredient, MeasurementUnit } from '../../../types';
 import { Button } from '../../common/Button';
@@ -25,38 +25,79 @@ export const IngredientsSection: React.FC<IngredientsSectionProps> = ({
 
   const [savingRowIndex, setSavingRowIndex] = useState<number | null>(null);
 
+  // Highlight and auto-scroll state for newly added ingredient rows
+  const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
+  const rowRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Clean up timer on unmount
+  useEffect(() => {
+    return () => {
+      if (highlightTimeoutRef.current) {
+        clearTimeout(highlightTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const triggerNewRowAnimation = (newIndex: number) => {
+    setHighlightedIndex(newIndex);
+    if (highlightTimeoutRef.current) {
+      clearTimeout(highlightTimeoutRef.current);
+    }
+
+    setTimeout(() => {
+      const element = rowRefs.current[newIndex];
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Auto focus the input or select element in the newly added row
+        const focusable = element.querySelector<HTMLInputElement | HTMLSelectElement>('input[type="text"], select');
+        if (focusable) {
+          focusable.focus();
+        }
+      }
+    }, 70);
+
+    highlightTimeoutRef.current = setTimeout(() => {
+      setHighlightedIndex(null);
+    }, 2000);
+  };
+
   // Add row for existing ingredient
   const handleAddRow = () => {
     const defaultIngredient = inventory[0];
+    const newIndex = ingredients.length;
     const newRow: RecipeIngredientItem = {
       ingredient_id: defaultIngredient ? defaultIngredient.id : '',
       quantity: 1, // Default 1 oz
       unit_id: defaultIngredient?.default_unit_id || ozUnit?.id || 'u-oz',
       custom_unit_symbol: 'oz',
-      sort_order: ingredients.length + 1,
+      sort_order: newIndex + 1,
       note: '',
       ingredient_name: defaultIngredient?.name || '',
       unit_symbol: defaultIngredient?.default_unit_symbol || 'oz',
       is_new_ingredient: false,
     };
     onChange([...ingredients, newRow]);
+    triggerNewRowAnimation(newIndex);
   };
 
   // Add row for a brand-new ingredient (to be saved to inventory when recipe is saved)
   const handleAddNewIngredientRow = () => {
     const tempId = `temp_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const newIndex = ingredients.length;
     const newRow: RecipeIngredientItem = {
       ingredient_id: tempId,
       quantity: 1, // Default 1 oz
       unit_id: ozUnit?.id || 'u-oz',
       custom_unit_symbol: 'oz',
-      sort_order: ingredients.length + 1,
+      sort_order: newIndex + 1,
       note: '',
       ingredient_name: '',
       unit_symbol: ozUnit?.symbol || 'oz',
       is_new_ingredient: true,
     };
     onChange([...ingredients, newRow]);
+    triggerNewRowAnimation(newIndex);
   };
 
   const handleSwitchToNewIngredient = (index: number) => {
@@ -190,7 +231,8 @@ export const IngredientsSection: React.FC<IngredientsSectionProps> = ({
 
   return (
     <section className="bg-cafe-surface dark:bg-cafe-darkCard rounded-2xl border border-cafe-border dark:border-cafe-darkBorder p-4 sm:p-6 shadow-cafe-subtle space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-cafe-border/60 dark:border-cafe-darkBorder">
+      {/* Sticky Section Header */}
+      <div className="sticky top-[134px] sm:top-[140px] z-10 -mx-4 sm:-mx-6 -mt-4 sm:-mt-6 p-4 sm:p-5 bg-cafe-surface/95 dark:bg-cafe-darkCard/95 backdrop-blur-md rounded-t-2xl border-b border-cafe-border/80 dark:border-cafe-darkBorder flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs transition-all">
         <div>
           <h2 className="text-base font-bold text-cafe-text dark:text-cafe-cream flex items-center gap-2">
             <Scale className="w-5 h-5 text-cafe-copper" />
@@ -262,20 +304,32 @@ export const IngredientsSection: React.FC<IngredientsSectionProps> = ({
           </div>
 
           {/* Rows */}
-          {ingredients.map((item, index) => (
-            <div
-              key={index}
-              className={`grid grid-cols-1 sm:grid-cols-12 gap-2 p-3 sm:p-2.5 rounded-xl border items-center text-sm transition-colors ${
-                item.is_new_ingredient
-                  ? 'bg-amber-50/60 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/60 shadow-xs'
-                  : 'bg-cafe-cream/50 dark:bg-cafe-darkSurface/60 border-cafe-border/60 dark:border-cafe-darkBorder'
-              }`}
-            >
-              {/* Order buttons */}
-              <div className="sm:col-span-1 flex sm:flex-col items-center justify-between sm:justify-center gap-1">
-                <span className="font-mono text-xs font-semibold text-cafe-muted px-1.5">
-                  #{index + 1}
-                </span>
+          {ingredients.map((item, index) => {
+            const isHighlighted = highlightedIndex === index;
+            return (
+              <div
+                key={index}
+                ref={(el) => (rowRefs.current[index] = el)}
+                className={`grid grid-cols-1 sm:grid-cols-12 gap-2 p-3 sm:p-2.5 rounded-xl border items-center text-sm transition-all duration-500 ${
+                  isHighlighted
+                    ? 'ring-2 ring-cafe-copper border-cafe-copper bg-amber-100/90 dark:bg-amber-950/70 shadow-lg scale-[1.01]'
+                    : item.is_new_ingredient
+                    ? 'bg-amber-50/60 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/60 shadow-xs'
+                    : 'bg-cafe-cream/50 dark:bg-cafe-darkSurface/60 border-cafe-border/60 dark:border-cafe-darkBorder'
+                }`}
+              >
+                {/* Order buttons */}
+                <div className="sm:col-span-1 flex sm:flex-col items-center justify-between sm:justify-center gap-1">
+                  <div className="flex items-center gap-1">
+                    <span className="font-mono text-xs font-semibold text-cafe-muted px-1.5">
+                      #{index + 1}
+                    </span>
+                    {isHighlighted && (
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-cafe-copper text-white animate-pulse">
+                        ใหม่ ✨
+                      </span>
+                    )}
+                  </div>
                 <div className="flex sm:flex-col gap-0.5">
                   <button
                     type="button"
@@ -451,7 +505,8 @@ export const IngredientsSection: React.FC<IngredientsSectionProps> = ({
                 </button>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </section>

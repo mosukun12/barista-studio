@@ -36,13 +36,14 @@ export const NotesSection: React.FC<NotesSectionProps> = ({ notes, onChange }) =
 
   return (
     <section className="bg-cafe-surface dark:bg-cafe-darkCard rounded-2xl border border-cafe-border dark:border-cafe-darkBorder p-5 sm:p-6 shadow-cafe-subtle space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-cafe-border/60 dark:border-cafe-darkBorder">
+      {/* Sticky Section Header */}
+      <div className="sticky top-[134px] sm:top-[140px] z-10 -mx-5 sm:-mx-6 -mt-5 sm:-mt-6 p-4 sm:p-5 bg-cafe-surface/95 dark:bg-cafe-darkCard/95 backdrop-blur-md rounded-t-2xl border-b border-cafe-border/80 dark:border-cafe-darkBorder flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs transition-all">
         <div>
           <h2 className="text-base font-bold text-cafe-text dark:text-cafe-cream flex items-center gap-2">
             <BookOpen className="w-5 h-5 text-cafe-copper" />
             Section E: เทคนิคและโน้ตบาริสต้า (Techniques & Notes)
           </h2>
-          <p className="text-xs text-cafe-muted">
+          <p className="text-xs text-cafe-muted mt-0.5">
             เคล็ดลับสำคัญ จุดผิดพลาดที่พบบ่อย การปรับรสตามลูกค้า และสิ่งที่ห้ามทำ
           </p>
         </div>
