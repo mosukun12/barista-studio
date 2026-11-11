@@ -15,6 +15,11 @@ import { authService } from './authService';
 import { recipeService } from './recipeService';
 import { ingredientService } from './ingredientService';
 
+function isUuid(str?: string | null): boolean {
+  if (!str) return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(str);
+}
+
 function generateInviteCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let result = 'BARISTA-';
@@ -272,28 +277,28 @@ export const teamService = {
    * Get members of a specific team.
    */
   async getTeamMembers(teamId: string): Promise<TeamMember[]> {
-    if (isSupabaseConfigured && supabase) {
+    if (isSupabaseConfigured && supabase && isUuid(teamId)) {
       try {
         const { data, error } = await supabase
           .from('team_members')
-          .select(`
-            id, team_id, user_id, role, joined_at,
-            profiles:user_id (id, full_name, avatar_url)
-          `)
+          .select('*')
           .eq('team_id', teamId)
           .order('joined_at', { ascending: true });
 
-        if (!error && data) {
+        if (!error && Array.isArray(data)) {
           return data.map((row: any) => ({
             id: row.id,
             team_id: row.team_id,
-            user_id: row.user_id,
-            email: row.profiles?.email || 'barista@team.cloud',
-            full_name: row.profiles?.full_name || 'Barista Member',
-            avatar_url: row.profiles?.avatar_url,
-            role: row.role,
+            user_id: row.user_id || row.id,
+            email: row.email || 'barista@team.cloud',
+            full_name: row.full_name || (row.email ? row.email.split('@')[0] : 'Barista Member'),
+            avatar_url: row.avatar_url || null,
+            role: row.role || 'barista',
             joined_at: row.joined_at,
           }));
+        }
+        if (error) {
+          console.warn('Supabase getTeamMembers error:', error);
         }
       } catch (err) {
         console.warn('Supabase getTeamMembers error:', err);
@@ -314,40 +319,55 @@ export const teamService = {
     const role: TeamRole = input.role || 'barista';
     const now = new Date().toISOString();
 
-    if (isSupabaseConfigured && supabase) {
+    if (isSupabaseConfigured && supabase && isUuid(teamId)) {
       try {
-        // Find user by email in profiles
+        // Try to find profile by email if exists
         const { data: profileData } = await supabase
           .from('profiles')
           .select('id, full_name')
           .eq('email', trimmedEmail)
-          .single();
+          .maybeSingle();
 
-        const userId = profileData?.id || `user-invite-${Date.now()}`;
+        const userId = profileData?.id || null;
 
         const { data, error } = await supabase
           .from('team_members')
           .insert({
             team_id: teamId,
             user_id: userId,
+            email: trimmedEmail,
+            full_name: input.full_name?.trim() || profileData?.full_name || trimmedEmail.split('@')[0],
             role,
           })
           .select()
           .single();
 
-        if (!error && data) {
-          return {
+        if (error) {
+          console.warn('Supabase addMember error:', error);
+          throw new Error(error.message);
+        }
+
+        if (data) {
+          const newMember: TeamMember = {
             id: data.id,
             team_id: data.team_id,
-            user_id: data.user_id,
-            email: trimmedEmail,
-            full_name: input.full_name || profileData?.full_name || trimmedEmail.split('@')[0],
-            role,
+            user_id: data.user_id || `user-${Date.now()}`,
+            email: data.email || trimmedEmail,
+            full_name: data.full_name || input.full_name || trimmedEmail.split('@')[0],
+            role: data.role || role,
             joined_at: data.joined_at,
           };
+
+          const currentMembers = localStore.getTeamMembers();
+          localStore.saveTeamMembers([
+            ...currentMembers.filter((m) => m.id !== newMember.id),
+            newMember,
+          ]);
+          return newMember;
         }
-      } catch (err) {
+      } catch (err: any) {
         console.warn('Supabase addMember error:', err);
+        throw err;
       }
     }
 
@@ -378,29 +398,42 @@ export const teamService = {
    * Remove a member from the team.
    */
   async removeMember(teamId: string, memberId: string): Promise<void> {
-    if (isSupabaseConfigured && supabase) {
+    const isMemberUuid = isUuid(memberId);
+    let supabaseError: string | null = null;
+
+    if (isSupabaseConfigured && supabase && isMemberUuid) {
       try {
-        await supabase.from('team_members').delete().eq('id', memberId);
-        return;
-      } catch (err) {
-        console.warn('Supabase removeMember error:', err);
+        const { error } = await supabase.from('team_members').delete().eq('id', memberId);
+        if (error) {
+          console.warn('Supabase removeMember error:', error);
+          supabaseError = error.message;
+        }
+      } catch (err: any) {
+        console.warn('Supabase removeMember exception:', err);
+        supabaseError = err.message;
       }
     }
 
+    // Always remove from localStore to ensure consistent state and immediate UI update
     const currentMembers = localStore.getTeamMembers().filter((m) => m.id !== memberId);
     localStore.saveTeamMembers(currentMembers);
+
+    if (supabaseError) {
+      throw new Error(`ลบสมาชิกจาก Cloud ไม่สำเร็จ: ${supabaseError}`);
+    }
   },
 
   /**
    * Update role of a member.
    */
   async updateMemberRole(teamId: string, memberId: string, role: TeamRole): Promise<void> {
-    if (isSupabaseConfigured && supabase) {
+    if (isSupabaseConfigured && supabase && isUuid(memberId)) {
       try {
-        await supabase.from('team_members').update({ role }).eq('id', memberId);
-        return;
-      } catch (err) {
+        const { error } = await supabase.from('team_members').update({ role }).eq('id', memberId);
+        if (error) throw new Error(error.message);
+      } catch (err: any) {
         console.warn('Supabase updateMemberRole error:', err);
+        throw err;
       }
     }
 

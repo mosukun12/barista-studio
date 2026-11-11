@@ -312,12 +312,19 @@ export const TeamsPage: React.FC = () => {
     if (!window.confirm('คุณแน่ใจหรือไม่ว่าต้องการนำสมาชิกนี้ออกจากทีม?')) return;
 
     try {
+      // Optimistic instant UI update
+      setTeamMembers((prev) => prev.filter((m) => m.id !== memberId));
       await teamService.removeMember(memberModalTeam.id, memberId);
       const updated = await teamService.getTeamMembers(memberModalTeam.id);
       setTeamMembers(updated);
       await loadTeams();
     } catch (err: any) {
       alert(err.message || 'นำสมาชิกออกไม่สำเร็จ');
+      // Revert if error
+      if (memberModalTeam) {
+        const fallback = await teamService.getTeamMembers(memberModalTeam.id);
+        setTeamMembers(fallback);
+      }
     }
   };
 
