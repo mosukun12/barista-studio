@@ -50,6 +50,7 @@ export const ingredientService = {
     const newIngredient: Ingredient = {
       id: crypto.randomUUID(),
       user_id: 'default_user',
+      team_id: data.team_id || null,
       name: data.name?.trim() || 'New Ingredient',
       brand: data.brand?.trim() || null,
       category_id: data.category_id || null,
@@ -61,6 +62,25 @@ export const ingredientService = {
       created_at: now,
       updated_at: now,
     };
+
+    if (data.team_id) {
+      try {
+        const shares = localStore.getTeamShares();
+        if (!shares.some((s) => s.team_id === data.team_id && s.item_type === 'ingredient' && s.item_id === newIngredient.id)) {
+          shares.push({
+            id: `share-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+            team_id: data.team_id,
+            item_type: 'ingredient',
+            item_id: newIngredient.id,
+            shared_by: newIngredient.user_id,
+            created_at: now,
+          });
+          localStore.saveTeamShares(shares);
+        }
+      } catch (e) {
+        console.warn('Auto-share ingredient to team failed:', e);
+      }
+    }
 
     if (isSupabaseConfigured && supabase) {
       const { data: user } = await supabase.auth.getUser();
@@ -207,6 +227,7 @@ export const ingredientService = {
     const newCat: Category = {
       id: crypto.randomUUID(),
       user_id: 'default_user',
+      team_id: cat.team_id || null,
       category_type: cat.category_type || 'recipe',
       name: cat.name?.trim() || 'New Category',
       slug: (cat.name?.toLowerCase().replace(/\s+/g, '-') || 'new-category') + `-${Date.now()}`,
@@ -215,6 +236,25 @@ export const ingredientService = {
       sort_order: cat.sort_order || 99,
       created_at: new Date().toISOString(),
     };
+
+    if (cat.team_id) {
+      try {
+        const shares = localStore.getTeamShares();
+        if (!shares.some((s) => s.team_id === cat.team_id && s.item_type === 'category' && s.item_id === newCat.id)) {
+          shares.push({
+            id: `share-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+            team_id: cat.team_id,
+            item_type: 'category',
+            item_id: newCat.id,
+            shared_by: newCat.user_id,
+            created_at: newCat.created_at,
+          });
+          localStore.saveTeamShares(shares);
+        }
+      } catch (e) {
+        console.warn('Auto-share category to team failed:', e);
+      }
+    }
 
     if (isSupabaseConfigured && supabase) {
       const { data: user } = await supabase.auth.getUser();

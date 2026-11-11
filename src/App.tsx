@@ -16,6 +16,7 @@ import { SimulatorPage } from './pages/SimulatorPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { AuthPage } from './pages/AuthPage';
 import { BatchPage } from './pages/BatchPage';
+import { TeamsPage } from './pages/TeamsPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -42,6 +43,7 @@ export const App: React.FC = () => {
                 <Route path="ingredients" element={<IngredientsPage />} />
                 <Route path="categories" element={<CategoriesPage />} />
                 <Route path="batch" element={<BatchPage />} />
+                <Route path="teams" element={<TeamsPage />} />
                 <Route path="training" element={<TrainingPage />} />
                 <Route path="practice" element={<PracticePage />} />
                 <Route path="simulator" element={<SimulatorPage />} />

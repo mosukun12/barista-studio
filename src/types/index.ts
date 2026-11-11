@@ -1,6 +1,7 @@
 export * from './database.types';
 export * from './recipe';
 export * from './category';
+export * from './team';
 
 export interface UserProfile {
   id: string;

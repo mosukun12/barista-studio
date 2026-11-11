@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Search, LayoutGrid, List, SlidersHorizontal, Archive, FolderTree } from 'lucide-react';
+import { Search, LayoutGrid, List, SlidersHorizontal, Archive, FolderTree, Users } from 'lucide-react';
 import { RecipeFilterOptions, Category } from '../../types';
 import { DRINK_TYPE_CONFIG, STATUS_CONFIG } from '../../lib/utils';
 
@@ -92,6 +92,14 @@ export const RecipeFilterBar: React.FC<RecipeFilterBarProps> = ({
             className="p-2 rounded-xl bg-cafe-surface dark:bg-cafe-darkCard border border-cafe-border dark:border-cafe-darkBorder text-cafe-muted hover:text-cafe-copper hover:border-cafe-copper transition-colors"
           >
             <FolderTree className="w-3.5 h-3.5" />
+          </Link>
+
+          <Link
+            to="/teams"
+            title="จัดการทีมและการแชร์สูตร (Teams & Sharing)"
+            className="p-2 rounded-xl bg-cafe-surface dark:bg-cafe-darkCard border border-cafe-border dark:border-cafe-darkBorder text-cafe-muted hover:text-cafe-copper hover:border-cafe-copper transition-colors"
+          >
+            <Users className="w-3.5 h-3.5" />
           </Link>
         </div>
 

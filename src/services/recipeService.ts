@@ -429,6 +429,7 @@ export const recipeService = {
       lid_type: recipe.lid_type || null,
       straw_type: recipe.straw_type || null,
       serving_notes: recipe.serving_notes || null,
+      team_id: recipe.team_id || null,
       status: recipe.status || 'draft',
       difficulty: recipe.difficulty || 'medium',
       prep_time_seconds: recipe.prep_time_seconds || 120,
@@ -441,6 +442,25 @@ export const recipeService = {
       steps: cleanSteps,
       notes: cleanNotes,
     };
+
+    if (recipe.team_id) {
+      try {
+        const shares = localStore.getTeamShares();
+        if (!shares.some((s) => s.team_id === recipe.team_id && s.item_type === 'recipe' && s.item_id === newRecipe.id)) {
+          shares.push({
+            id: `share-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+            team_id: recipe.team_id,
+            item_type: 'recipe',
+            item_id: newRecipe.id,
+            shared_by: newRecipe.user_id,
+            created_at: now,
+          });
+          localStore.saveTeamShares(shares);
+        }
+      } catch (e) {
+        console.warn('Auto-share to team failed:', e);
+      }
+    }
 
     if (isSupabaseConfigured && supabase) {
       const client = supabase as any;
@@ -707,6 +727,27 @@ export const recipeService = {
       };
       current[index] = updatedRecipe;
       localStore.saveRecipes(current);
+
+      if (updates.team_id !== undefined) {
+        try {
+          const shares = localStore.getTeamShares();
+          if (updates.team_id) {
+            if (!shares.some((s) => s.team_id === updates.team_id && s.item_type === 'recipe' && s.item_id === id)) {
+              shares.push({
+                id: `share-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+                team_id: updates.team_id,
+                item_type: 'recipe',
+                item_id: id,
+                shared_by: updatedRecipe.user_id,
+                created_at: now,
+              });
+              localStore.saveTeamShares(shares);
+            }
+          }
+        } catch (e) {
+          console.warn('Update team share failed:', e);
+        }
+      }
 
       if (changeSummary) {
         await this.saveVersionSnapshot(id, changeSummary, undefined, updatedRecipe);

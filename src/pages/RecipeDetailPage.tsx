@@ -16,6 +16,7 @@ import {
   CheckCircle2,
   Share2,
   Beaker,
+  Users,
 } from 'lucide-react';
 import { Recipe, RecipeVersionItem } from '../types';
 import {
@@ -242,6 +243,11 @@ export const RecipeDetailPage: React.FC = () => {
                 {recipe.glass_size && (
                   <span className="px-2.5 py-1 rounded-full text-xs font-mono font-semibold bg-cafe-copper/10 text-cafe-copper border border-cafe-copper/20">
                     ขนาดแก้ว: {recipe.glass_size}
+                  </span>
+                )}
+                {recipe.team_id && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-cafe-copper/15 text-cafe-copper border border-cafe-copper/30">
+                    <Users className="w-3.5 h-3.5" /> แชร์ในทีมแล้ว
                   </span>
                 )}
               </div>

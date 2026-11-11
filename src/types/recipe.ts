@@ -24,6 +24,8 @@ export interface MeasurementUnit {
 export interface Ingredient {
   id: string;
   user_id: string;
+  team_id?: string | null;
+  shared_team_ids?: string[];
   name: string;
   brand?: string | null;
   category_id?: string | null;
@@ -105,6 +107,8 @@ export interface RecipeVersionItem {
 export interface Recipe {
   id: string;
   user_id: string;
+  team_id?: string | null;
+  shared_team_ids?: string[];
   name_th: string;
   name_en?: string | null;
   description?: string | null;

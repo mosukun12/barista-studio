@@ -14,6 +14,7 @@ import {
   CloudCheck,
   HardDrive,
   X,
+  Users,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../context/AuthContext';
@@ -32,6 +33,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { name: 'Ingredients', path: '/ingredients', icon: Wheat },
     { name: 'Categories', path: '/categories', icon: FolderTree },
     { name: 'Batch Editor', path: '/batch', icon: TableProperties },
+    { name: 'Teams & Hub', path: '/teams', icon: Users },
     { name: 'Training Guide', path: '/training', icon: GraduationCap },
     { name: 'Practice', path: '/practice', icon: Target },
     { name: 'Simulator', path: '/simulator', icon: Gamepad2 },

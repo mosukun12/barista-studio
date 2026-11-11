@@ -1,8 +1,9 @@
-import React, { useRef } from 'react';
-import { Upload, X, Image as ImageIcon } from 'lucide-react';
-import { Recipe, Category, RecipeStatus } from '../../../types';
+import React, { useRef, useState, useEffect } from 'react';
+import { Upload, X, Image as ImageIcon, Users } from 'lucide-react';
+import { Recipe, Category, RecipeStatus, Team } from '../../../types';
 import { STATUS_CONFIG } from '../../../lib/utils';
 import { uploadImage } from '../../../services/storageService';
+import { teamService } from '../../../services/teamService';
 
 interface GeneralSectionProps {
   recipe: Partial<Recipe>;
@@ -18,6 +19,19 @@ export const GeneralSection: React.FC<GeneralSectionProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = React.useState(false);
   const [tagInput, setTagInput] = React.useState('');
+  const [teams, setTeams] = useState<Team[]>([]);
+
+  useEffect(() => {
+    const fetchTeams = async () => {
+      try {
+        const teamList = await teamService.getTeams();
+        setTeams(teamList);
+      } catch (err) {
+        console.warn('Failed to load teams in GeneralSection:', err);
+      }
+    };
+    fetchTeams();
+  }, []);
 
   const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -197,6 +211,34 @@ export const GeneralSection: React.FC<GeneralSectionProps> = ({
                 <option value="archived">📦 {STATUS_CONFIG.archived.label}</option>
               </select>
             </div>
+          </div>
+
+          {/* Team Sharing */}
+          <div className="p-3.5 rounded-xl bg-cafe-cream/40 dark:bg-cafe-darkSurface/60 border border-cafe-border/70 dark:border-cafe-darkBorder space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2 text-xs font-semibold text-cafe-text dark:text-stone-300">
+                <Users className="w-4 h-4 text-cafe-copper" />
+                การแชร์เข้าทีม (Team Sharing)
+              </label>
+              <span className="text-[11px] font-medium text-cafe-muted">
+                {recipe.team_id ? '🟢 แชร์ในเวิร์กสเปซทีม' : '🔒 เฉพาะส่วนตัว'}
+              </span>
+            </div>
+            <select
+              value={recipe.team_id || ''}
+              onChange={(e) => onChange({ team_id: e.target.value || null })}
+              className="w-full px-3.5 py-2.5 rounded-xl bg-cafe-surface dark:bg-cafe-darkCard border border-cafe-border dark:border-cafe-darkBorder text-sm text-cafe-text dark:text-cafe-cream focus:ring-2 focus:ring-cafe-copper focus:outline-none"
+            >
+              <option value="">🔒 เฉพาะส่วนตัว (Private - ไม่แชร์เข้าทีม)</option>
+              {teams.map((t) => (
+                <option key={t.id} value={t.id}>
+                  👥 ทีม: {t.name} ({t.members_count || 1} สมาชิก)
+                </option>
+              ))}
+            </select>
+            <p className="text-[11px] text-cafe-muted">
+              เมื่อเลือกแชร์เข้าทีม สมาชิกในทีมทุกคนจะสามารถเปิดดู ซ้อมชง และเข้าถึงสูตรนี้ได้
+            </p>
           </div>
 
           {/* Description */}

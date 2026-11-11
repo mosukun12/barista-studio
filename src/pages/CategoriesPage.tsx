@@ -14,9 +14,11 @@ import {
   X,
   SlidersHorizontal,
   TableProperties,
+  Users,
 } from 'lucide-react';
-import { Category } from '../types';
+import { Category, Team } from '../types';
 import { ingredientService } from '../services/ingredientService';
+import { teamService } from '../services/teamService';
 import { Button } from '../components/common/Button';
 import { EmptyState } from '../components/common/EmptyState';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
@@ -34,6 +36,8 @@ export const CategoriesPage: React.FC = () => {
   const [formName, setFormName] = useState('');
   const [formType, setFormType] = useState<'recipe' | 'ingredient'>('recipe');
   const [formDescription, setFormDescription] = useState('');
+  const [formTeamId, setFormTeamId] = useState<string>('');
+  const [teams, setTeams] = useState<Team[]>([]);
   const [isSaving, setIsSaving] = useState(false);
 
   // Delete Confirm State
@@ -43,8 +47,12 @@ export const CategoriesPage: React.FC = () => {
   const loadCategories = useCallback(async () => {
     try {
       setIsLoading(true);
-      const data = await ingredientService.getCategories('all');
+      const [data, teamList] = await Promise.all([
+        ingredientService.getCategories('all'),
+        teamService.getTeams(),
+      ]);
       setCategories(data);
+      setTeams(teamList);
     } catch (err) {
       console.error('Error loading categories:', err);
     } finally {
@@ -91,6 +99,7 @@ export const CategoriesPage: React.FC = () => {
     setFormName('');
     setFormType(filterType !== 'all' ? filterType : defaultType);
     setFormDescription('');
+    setFormTeamId('');
     setIsModalOpen(true);
   };
 
@@ -100,6 +109,7 @@ export const CategoriesPage: React.FC = () => {
     setFormName(cat.name);
     setFormType(cat.category_type as 'recipe' | 'ingredient');
     setFormDescription(cat.description || '');
+    setFormTeamId(cat.team_id || '');
     setIsModalOpen(true);
   };
 
@@ -117,12 +127,14 @@ export const CategoriesPage: React.FC = () => {
         await ingredientService.updateCategory(editingCategory.id, {
           name: formName.trim(),
           description: formDescription.trim() || null,
+          team_id: formTeamId || null,
         });
       } else {
         await ingredientService.createCategory({
           name: formName.trim(),
           category_type: formType,
           description: formDescription.trim() || null,
+          team_id: formTeamId || null,
           sort_order: categories.length + 1,
         });
       }
@@ -483,6 +495,26 @@ export const CategoriesPage: React.FC = () => {
                   }
                   className="w-full px-3.5 py-2.5 rounded-xl bg-cafe-surface dark:bg-cafe-darkSurface border border-cafe-border dark:border-cafe-darkBorder text-xs sm:text-sm text-cafe-text dark:text-cafe-cream focus:outline-none focus:ring-2 focus:ring-cafe-copper"
                 />
+              </div>
+
+              {/* Team Sharing */}
+              <div>
+                <label className="flex items-center gap-1.5 text-xs font-semibold text-cafe-text dark:text-stone-300 mb-1.5">
+                  <Users className="w-3.5 h-3.5 text-cafe-copper" />
+                  การแชร์เข้าทีม (Team Sharing)
+                </label>
+                <select
+                  value={formTeamId}
+                  onChange={(e) => setFormTeamId(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-cafe-surface dark:bg-cafe-darkSurface border border-cafe-border dark:border-cafe-darkBorder text-xs sm:text-sm text-cafe-text dark:text-cafe-cream focus:outline-none focus:ring-2 focus:ring-cafe-copper"
+                >
+                  <option value="">🔒 เฉพาะส่วนตัว (Private - ไม่แชร์เข้าทีม)</option>
+                  {teams.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      👥 ทีม: {t.name}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {/* Description */}

@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Search, Wheat, Edit3, Trash2, AlertCircle, CheckCircle2, X, FolderTree, TableProperties } from 'lucide-react';
-import { Ingredient, Category, MeasurementUnit } from '../types';
+import { Plus, Search, Wheat, Edit3, Trash2, AlertCircle, CheckCircle2, X, FolderTree, TableProperties, Users } from 'lucide-react';
+import { Ingredient, Category, MeasurementUnit, Team } from '../types';
 import { ingredientService } from '../services/ingredientService';
+import { teamService } from '../services/teamService';
 import { Button } from '../components/common/Button';
 import { Modal } from '../components/common/Modal';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
@@ -14,6 +15,7 @@ export const IngredientsPage: React.FC = () => {
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [units, setUnits] = useState<MeasurementUnit[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -32,14 +34,16 @@ export const IngredientsPage: React.FC = () => {
   const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const [ingList, catList, unitList] = await Promise.all([
+      const [ingList, catList, unitList, teamList] = await Promise.all([
         ingredientService.getIngredients(),
         ingredientService.getCategories('ingredient'),
         ingredientService.getUnits(),
+        teamService.getTeams(),
       ]);
       setIngredients(ingList);
       setCategories(catList);
       setUnits(unitList.length > 0 ? unitList : STANDARD_UNITS);
+      setTeams(teamList);
     } catch (err) {
       console.error('Error loading ingredients page:', err);
     } finally {
@@ -70,6 +74,7 @@ export const IngredientsPage: React.FC = () => {
       brand: '',
       category_id: categories[0]?.id || null,
       default_unit_id: units[0]?.id || 'u-ml',
+      team_id: null,
       description: '',
       notes: '',
       is_active: true,
@@ -367,6 +372,30 @@ export const IngredientsPage: React.FC = () => {
                 {units.map((u) => (
                   <option key={u.id} value={u.id}>
                     {u.symbol} — {u.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="flex items-center gap-1.5 text-xs font-semibold text-cafe-text dark:text-stone-300 mb-1">
+                <Users className="w-3.5 h-3.5 text-cafe-copper" />
+                การแชร์เข้าทีม (Team Sharing)
+              </label>
+              <select
+                value={editingIngredient.team_id || ''}
+                onChange={(e) =>
+                  setEditingIngredient({
+                    ...editingIngredient,
+                    team_id: e.target.value || null,
+                  })
+                }
+                className="w-full px-3.5 py-2 rounded-xl bg-cafe-surface dark:bg-cafe-darkSurface border border-cafe-border dark:border-cafe-darkBorder text-sm text-cafe-text dark:text-cafe-cream focus:ring-2 focus:ring-cafe-copper focus:outline-none"
+              >
+                <option value="">🔒 เฉพาะส่วนตัว (Private - ไม่แชร์เข้าทีม)</option>
+                {teams.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    👥 ทีม: {t.name}
                   </option>
                 ))}
               </select>

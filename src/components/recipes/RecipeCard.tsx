@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Clock, Coffee, Copy, Trash2, Archive, Edit3, MoreVertical, Layers } from 'lucide-react';
+import { Clock, Coffee, Copy, Trash2, Archive, Edit3, MoreVertical, Layers, Users } from 'lucide-react';
 import { Recipe } from '../../types';
 import { StatusBadge } from '../common/Badge';
 import { DRINK_TYPE_CONFIG, formatDuration, formatDate } from '../../lib/utils';
@@ -158,7 +158,13 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
           </div>
 
           <div className="flex items-center justify-between text-[11px] text-cafe-muted/70 font-mono">
-            <span>v{recipe.current_version || 1}</span>
+            {recipe.team_id ? (
+              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-cafe-copper bg-cafe-cream/80 dark:bg-cafe-darkSurface px-2 py-0.5 rounded-md border border-cafe-border/50 dark:border-cafe-darkBorder">
+                <Users className="w-3 h-3" /> ในทีม
+              </span>
+            ) : (
+              <span>v{recipe.current_version || 1}</span>
+            )}
             <span>{formatDate(recipe.updated_at)}</span>
           </div>
         </div>
