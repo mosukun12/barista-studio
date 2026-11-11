@@ -248,7 +248,7 @@ export const SimulatorPage: React.FC = () => {
 
         <EmptyState
           title="จำเป็นต้องมีสูตรที่มีสถานะ Verified ในระบบ"
-          description="ระบบจำลองสถานการณ์จะดึงออร์เดอร์และเฉลยจากสูตรที่ผ่านการตรวจสอบแล้ว (Verified) ใน Recipe Book เท่านั้น เพื่อความแม่นยำในการฝึกทำงานจริง"
+          description="ระบบจำลองสถานการณ์จะดึงออร์เดอร์และเฉลยจากสูตรสถานะ Verified ใน Recipe Book เท่านั้น เพื่อความแม่นยำในการฝึกทำงานจริง"
           icon={<Coffee className="w-8 h-8 text-cafe-copper" />}
         />
       </div>

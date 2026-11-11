@@ -100,7 +100,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
                   className="flex items-center gap-2 w-full px-3 py-2 text-cafe-text dark:text-cafe-cream hover:bg-cafe-cream dark:hover:bg-cafe-darkCard text-left"
                 >
                   <Archive className="w-3.5 h-3.5 text-amber-600" />
-                  {recipe.is_archived ? 'เลิกเก็บถาวร' : 'เก็บถาวร (Archive)'}
+                  {recipe.is_archived ? 'Unarchive' : 'Archive'}
                 </button>
                 <div className="my-1 border-t border-cafe-border/60 dark:border-cafe-darkBorder" />
                 <button

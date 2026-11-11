@@ -124,7 +124,7 @@ export const DashboardPage: React.FC = () => {
           className="p-5 rounded-2xl bg-cafe-surface dark:bg-cafe-darkCard border border-cafe-border dark:border-cafe-darkBorder shadow-cafe-subtle hover:border-emerald-500/50 cursor-pointer transition-all"
         >
           <div className="flex items-center justify-between text-cafe-muted mb-2">
-            <span className="text-xs font-semibold">ตรวจสอบแล้ว (Verified)</span>
+            <span className="text-xs font-semibold">Verified</span>
             <CheckCircle2 className="w-4 h-4 text-emerald-600" />
           </div>
           <div className="text-2xl sm:text-3xl font-bold font-mono text-emerald-700 dark:text-emerald-400">
@@ -139,7 +139,7 @@ export const DashboardPage: React.FC = () => {
           className="p-5 rounded-2xl bg-cafe-surface dark:bg-cafe-darkCard border border-cafe-border dark:border-cafe-darkBorder shadow-cafe-subtle hover:border-amber-500/50 cursor-pointer transition-all"
         >
           <div className="flex items-center justify-between text-cafe-muted mb-2">
-            <span className="text-xs font-semibold">อยู่ระหว่างทดสอบ / ร่าง</span>
+            <span className="text-xs font-semibold">Testing / Draft</span>
             <FlaskConical className="w-4 h-4 text-amber-600" />
           </div>
           <div className="text-2xl sm:text-3xl font-bold font-mono text-amber-700 dark:text-amber-400">
@@ -272,7 +272,7 @@ export const DashboardPage: React.FC = () => {
             <h3 className="text-sm font-bold text-cafe-text dark:text-cafe-cream flex items-center justify-between">
               <span className="flex items-center gap-1.5">
                 <FlaskConical className="w-4 h-4 text-amber-600" />
-                กำลังทดลอง (In Testing)
+                In Testing
               </span>
               <span className="text-xs font-mono text-cafe-muted">
                 {testingRecipes.length} รายการ

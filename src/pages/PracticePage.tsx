@@ -215,7 +215,7 @@ export const PracticePage: React.FC = () => {
     return (
       <div className="p-20 text-center text-cafe-muted">
         <span className="w-8 h-8 border-2 border-cafe-copper border-t-transparent rounded-full animate-spin inline-block mb-2" />
-        <div className="text-xs">กำลังตรวจสอบสูตรที่ผ่านการยืนยัน (Verified)...</div>
+        <div className="text-xs">กำลังตรวจสอบสูตรสถานะ Verified...</div>
       </div>
     );
   }
@@ -229,13 +229,13 @@ export const PracticePage: React.FC = () => {
             ระบบฝึกจำสูตร (Practice Mode)
           </h1>
           <p className="text-xs sm:text-sm text-cafe-muted mt-0.5">
-            สุ่มทดสอบความจำจากสูตรจริงที่ได้รับการยืนยัน (Verified) เท่านั้น
+            สุ่มทดสอบความจำจากสูตรสถานะ Verified เท่านั้น
           </p>
         </div>
 
         <EmptyState
           title="ยังไม่มีสูตรที่มีสถานะ Verified สำหรับสร้างแบบทดสอบ"
-          description="ตามหลักการของ Barista Studio ระบบฝึกฝนจะดึงข้อมูลจากสูตรที่ผ่านการตรวจสอบแล้ว (Verified) เท่านั้น เพื่อป้องกันการจำสูตรที่ยังไม่สมบูรณ์"
+          description="ตามหลักการของ Barista Studio ระบบฝึกฝนจะดึงข้อมูลจากสูตรสถานะ Verified เท่านั้น เพื่อป้องกันการจำสูตรที่ยังไม่สมบูรณ์"
           actionLabel="ไปที่ Recipe Book เพื่อตั้งสถานะเป็น Verified"
           onAction={() => navigate('/recipes')}
           icon={<ShieldCheck className="w-8 h-8 text-emerald-600" />}

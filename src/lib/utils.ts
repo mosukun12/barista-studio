@@ -34,7 +34,7 @@ export const STATUS_CONFIG: Record<
   { label: string; labelEn: string; colorClass: string; bgClass: string; borderClass: string; dotClass: string }
 > = {
   verified: {
-    label: 'ตรวจสอบแล้ว (Verified)',
+    label: 'Verified',
     labelEn: 'Verified',
     colorClass: 'text-emerald-700 dark:text-emerald-300',
     bgClass: 'bg-emerald-50 dark:bg-emerald-950/40',
@@ -42,7 +42,7 @@ export const STATUS_CONFIG: Record<
     dotClass: 'bg-emerald-500',
   },
   testing: {
-    label: 'กำลังทดสอบ (Testing)',
+    label: 'Testing',
     labelEn: 'Testing',
     colorClass: 'text-amber-700 dark:text-amber-300',
     bgClass: 'bg-amber-50 dark:bg-amber-950/40',
@@ -50,7 +50,7 @@ export const STATUS_CONFIG: Record<
     dotClass: 'bg-amber-500',
   },
   incomplete: {
-    label: 'ข้อมูลไม่ครบ (Incomplete)',
+    label: 'Incomplete',
     labelEn: 'Incomplete',
     colorClass: 'text-orange-700 dark:text-orange-300',
     bgClass: 'bg-orange-50 dark:bg-orange-950/40',
@@ -58,7 +58,7 @@ export const STATUS_CONFIG: Record<
     dotClass: 'bg-orange-500',
   },
   draft: {
-    label: 'สูตรร่าง (Draft)',
+    label: 'Draft',
     labelEn: 'Draft',
     colorClass: 'text-stone-600 dark:text-stone-400',
     bgClass: 'bg-stone-100 dark:bg-stone-800/50',
@@ -66,7 +66,7 @@ export const STATUS_CONFIG: Record<
     dotClass: 'bg-stone-400',
   },
   archived: {
-    label: 'เก็บถาวร (Archived)',
+    label: 'Archived',
     labelEn: 'Archived',
     colorClass: 'text-neutral-500 dark:text-neutral-400',
     bgClass: 'bg-neutral-100 dark:bg-neutral-900',

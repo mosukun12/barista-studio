@@ -182,7 +182,7 @@ export const RecipeDetailPage: React.FC = () => {
             icon={<Archive className="w-4 h-4 text-amber-600" />}
             onClick={handleToggleArchive}
           >
-            {recipe.is_archived ? 'เลิกเก็บถาวร' : 'เก็บถาวร'}
+            {recipe.is_archived ? 'Unarchive' : 'Archive'}
           </Button>
           <Button
             variant="primary"

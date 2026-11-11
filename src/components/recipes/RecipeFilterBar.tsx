@@ -107,9 +107,9 @@ export const RecipeFilterBar: React.FC<RecipeFilterBarProps> = ({
         <select
           value={filters.status}
           onChange={(e) => onFilterChange({ status: e.target.value })}
-          className="text-xs py-2 px-3 rounded-xl bg-cafe-surface dark:bg-cafe-darkCard border border-cafe-border dark:border-cafe-darkBorder text-cafe-text dark:text-cafe-cream focus:outline-none focus:ring-2 focus:ring-cafe-copper"
+          className="text-xs py-2 px-3 rounded-xl bg-cafe-surface dark:bg-cafe-darkCard border border-cafe-border dark:border-cafe-darkBorder text-cafe-text dark:text-cafe-cream focus:outline-none focus:ring-2 focus:ring-cafe-copper font-medium"
         >
-          <option value="all">ทุกสถานะ (All Status)</option>
+          <option value="all">All Status</option>
           <option value="verified">🟢 {STATUS_CONFIG.verified.label}</option>
           <option value="testing">🟡 {STATUS_CONFIG.testing.label}</option>
           <option value="incomplete">🟠 {STATUS_CONFIG.incomplete.label}</option>
@@ -151,7 +151,7 @@ export const RecipeFilterBar: React.FC<RecipeFilterBarProps> = ({
             className="rounded border-cafe-border text-cafe-copper focus:ring-cafe-copper"
           />
           <Archive className="w-3.5 h-3.5" />
-          แสดงสูตรที่เก็บถาวร (Archived)
+          Show Archived
         </label>
       </div>
     </div>
