@@ -1,9 +1,13 @@
 -- ==============================================================================
--- BARISTA STUDIO — TEAMS & SHARING SYSTEM MIGRATION
+-- BARISTA STUDIO — TEAMS & SHARING SYSTEM MIGRATION (ROBUST & BULLETPROOF)
 -- Run this in Supabase SQL Editor
 -- ==============================================================================
 
--- 1. TEAMS TABLE
+-- 1. EXTENSIONS
+create extension if not exists "uuid-ossp";
+create extension if not exists "pgcrypto";
+
+-- 2. TEAMS TABLE
 create table if not exists public.teams (
     id uuid primary key default gen_random_uuid(),
     name text not null,
@@ -16,7 +20,7 @@ create table if not exists public.teams (
 
 alter table public.teams enable row level security;
 
--- 2. TEAM MEMBERS TABLE
+-- 3. TEAM MEMBERS TABLE
 create table if not exists public.team_members (
     id uuid primary key default gen_random_uuid(),
     team_id uuid references public.teams(id) on delete cascade not null,
@@ -28,7 +32,7 @@ create table if not exists public.team_members (
 
 alter table public.team_members enable row level security;
 
--- 3. TEAM SHARES TABLE (Recipes, Ingredients, Categories shared into Team)
+-- 4. TEAM SHARES TABLE (Recipes, Ingredients, Categories shared into Team)
 create table if not exists public.team_shares (
     id uuid primary key default gen_random_uuid(),
     team_id uuid references public.teams(id) on delete cascade not null,
@@ -41,75 +45,79 @@ create table if not exists public.team_shares (
 
 alter table public.team_shares enable row level security;
 
--- Add optional team_id column to recipes, ingredients, and categories if not present
-do $$ 
+-- 5. SAFELY ADD TEAM_ID COLUMN TO EXISTING TABLES (IF THEY EXIST)
+alter table if exists public.recipes add column if not exists team_id uuid references public.teams(id) on delete set null;
+alter table if exists public.ingredients add column if not exists team_id uuid references public.teams(id) on delete set null;
+alter table if exists public.categories add column if not exists team_id uuid references public.teams(id) on delete set null;
+
+-- 6. RLS POLICIES FOR TEAMS (Clean drop and create)
+do $$
 begin
-    if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'recipes' and column_name = 'team_id') then
-        alter table public.recipes add column team_id uuid references public.teams(id) on delete set null;
-    end if;
-
-    if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'ingredients' and column_name = 'team_id') then
-        alter table public.ingredients add column team_id uuid references public.teams(id) on delete set null;
-    end if;
-
-    if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'categories' and column_name = 'team_id') then
-        alter table public.categories add column team_id uuid references public.teams(id) on delete set null;
-    end if;
+    drop policy if exists "Users can view teams they belong to" on public.teams;
+    drop policy if exists "Users can create teams" on public.teams;
+    drop policy if exists "Owners and admins can update team" on public.teams;
+    drop policy if exists "Owners can delete team" on public.teams;
+exception when others then null;
 end $$;
 
--- RLS Policies for Teams
-drop policy if exists "Users can view teams they belong to" on public.teams;
 create policy "Users can view teams they belong to" on public.teams
 for select using (
     owner_id = auth.uid() or
     exists (select 1 from public.team_members tm where tm.team_id = id and tm.user_id = auth.uid())
 );
 
-drop policy if exists "Users can create teams" on public.teams;
 create policy "Users can create teams" on public.teams
 for insert with check (owner_id = auth.uid());
 
-drop policy if exists "Owners and admins can update team" on public.teams;
 create policy "Owners and admins can update team" on public.teams
 for update using (
     owner_id = auth.uid() or
     exists (select 1 from public.team_members tm where tm.team_id = id and tm.user_id = auth.uid() and tm.role in ('owner', 'admin'))
 );
 
-drop policy if exists "Owners can delete team" on public.teams;
 create policy "Owners can delete team" on public.teams
 for delete using (owner_id = auth.uid());
 
--- RLS Policies for Team Members
-drop policy if exists "Users can view members of their teams" on public.team_members;
+-- 7. RLS POLICIES FOR TEAM MEMBERS
+do $$
+begin
+    drop policy if exists "Users can view members of their teams" on public.team_members;
+    drop policy if exists "Team owners and admins can manage members" on public.team_members;
+exception when others then null;
+end $$;
+
 create policy "Users can view members of their teams" on public.team_members
 for select using (
     user_id = auth.uid() or
     exists (select 1 from public.team_members tm where tm.team_id = team_id and tm.user_id = auth.uid())
 );
 
-drop policy if exists "Team owners and admins can manage members" on public.team_members;
 create policy "Team owners and admins can manage members" on public.team_members
 for all using (
     exists (select 1 from public.teams t where t.id = team_id and t.owner_id = auth.uid()) or
     exists (select 1 from public.team_members tm where tm.team_id = team_id and tm.user_id = auth.uid() and tm.role in ('owner', 'admin'))
 );
 
--- RLS Policies for Team Shares
-drop policy if exists "Team members can view shared items" on public.team_shares;
+-- 8. RLS POLICIES FOR TEAM SHARES
+do $$
+begin
+    drop policy if exists "Team members can view shared items" on public.team_shares;
+    drop policy if exists "Team members can share items" on public.team_shares;
+    drop policy if exists "Team members can delete shares" on public.team_shares;
+exception when others then null;
+end $$;
+
 create policy "Team members can view shared items" on public.team_shares
 for select using (
     exists (select 1 from public.team_members tm where tm.team_id = team_id and tm.user_id = auth.uid())
 );
 
-drop policy if exists "Team members can share items" on public.team_shares;
 create policy "Team members can share items" on public.team_shares
 for insert with check (
     shared_by = auth.uid() and
     exists (select 1 from public.team_members tm where tm.team_id = team_id and tm.user_id = auth.uid())
 );
 
-drop policy if exists "Team members can delete shares" on public.team_shares;
 create policy "Team members can delete shares" on public.team_shares
 for delete using (
     shared_by = auth.uid() or
